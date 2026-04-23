@@ -37,6 +37,16 @@
 
           <div class="settings settings--three">
             <div class="settings__group">
+              <label class="label" for="selectTheme" data-i18n="settings.theme">Тема оформлення</label>
+              <select id="selectTheme" class="select">
+                <option value="default" data-i18n="theme.default">Темна (Стандартна)</option>
+                <option value="light-blue" data-i18n="theme.lightBlue">Світла (Блакитна)</option>
+                <option value="dark-purple" data-i18n="theme.darkPurple">Темна (Фіолетова)</option>
+                <option value="light-green" data-i18n="theme.lightGreen">Світла (Зелена)</option>
+              </select>
+            </div>
+
+            <div class="settings__group">
               <label class="label" for="selectUiLang" data-i18n="settings.uiLanguage">Мова інтерфейсу</label>
               <select id="selectUiLang" class="select">
                 <option value="uk" data-i18n="lang.uk">Українська</option>
@@ -48,6 +58,7 @@
               <label class="label" for="selectEngine" data-i18n="settings.ocrEngine">Двигун OCR</label>
               <select id="selectEngine" class="select">
                 <option value="tesseract" selected data-i18n="settings.engineTesseract">Tesseract</option>
+                <option value="mlkit" data-i18n="settings.engineMlkit">Google ML Kit</option>
                 <option value="gemma" data-i18n="settings.engineGemma">Gemma</option>
               </select>
             </div>

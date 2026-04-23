@@ -20,6 +20,7 @@ const ui = {
   btnDownloadE4B: document.getElementById("btnDownloadE4B"),
   btnDownloadModel: document.getElementById("btnDownloadModel"),
   modelDownloadStatus: document.getElementById("modelDownloadStatus"),
+  selectTheme: document.getElementById("selectTheme"),
   selectUiLang: document.getElementById("selectUiLang"),
   selectEngine: document.getElementById("selectEngine"),
   selectLang: document.getElementById("selectLang"),
@@ -65,6 +66,7 @@ const state = {
   quad: null,
   rawText: "",
   settings: {
+    theme: "default",
     uiLang: "uk",
     engine: "tesseract",
     lang: "ukr+eng",
@@ -96,6 +98,11 @@ const i18n = {
     "home.pickPhoto": "Обрати фото",
     "home.takePhoto": "Зробити фото",
     "settings.title": "Налаштування",
+    "settings.theme": "Тема оформлення",
+    "theme.default": "Темна (Стандартна)",
+    "theme.lightBlue": "Світла (Блакитна)",
+    "theme.darkPurple": "Темна (Фіолетова)",
+    "theme.lightGreen": "Світла (Зелена)",
     "settings.uiLanguage": "Мова інтерфейсу",
     "lang.uk": "Українська",
     "lang.en": "English",
@@ -190,6 +197,11 @@ const i18n = {
     "home.pickPhoto": "Choose photo",
     "home.takePhoto": "Take photo",
     "settings.title": "Settings",
+    "settings.theme": "Theme",
+    "theme.default": "Dark (Default)",
+    "theme.lightBlue": "Light (Blue)",
+    "theme.darkPurple": "Dark (Purple)",
+    "theme.lightGreen": "Light (Green)",
     "settings.uiLanguage": "Interface language",
     "lang.uk": "Ukrainian",
     "lang.en": "English",
@@ -470,7 +482,13 @@ function applyReadingStyle() {
   ui.output.style.color = style.textColor;
 }
 
+function applyTheme() {
+  const theme = state.settings.theme || "default";
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
 function updateSettingsControls() {
+  if (ui.selectTheme) ui.selectTheme.value = state.settings.theme || "default";
   if (ui.selectUiLang) ui.selectUiLang.value = currentUiLang();
   ui.selectEngine.value = state.settings.engine;
   ui.selectLang.value = state.settings.lang;
@@ -1199,6 +1217,13 @@ function wireUi() {
     state.settings.engine = ui.selectEngine.value;
     persistSettings();
   });
+  if (ui.selectTheme) {
+    ui.selectTheme.addEventListener("change", () => {
+      state.settings.theme = ui.selectTheme.value;
+      persistSettings();
+      applyTheme();
+    });
+  }
   if (ui.selectUiLang) {
     ui.selectUiLang.addEventListener("change", () => {
       state.settings.uiLang = ui.selectUiLang.value;
@@ -1297,6 +1322,7 @@ function wireUi() {
 }
 
 tryLoadSettings();
+applyTheme();
 applyLanguage();
 updateSettingsControls();
 applyReadingStyle();
