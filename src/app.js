@@ -159,6 +159,19 @@ const i18n = {
     "errors.openCameraFailed": "Не вдалося відкрити камеру",
     "status.rotating": "Поворот…",
     "errors.rotateFailed": "Не вдалося повернути зображення",
+    "errors.unknown": "Сталася помилка",
+    "errors.cancelled": "Скасовано",
+    "errors.roiZero": "Вибрана область порожня",
+    "errors.unknownOcrEngine": "Невідомий двигун OCR",
+    "errors.decodeImage": "Не вдалося декодувати зображення",
+    "errors.imageRequired": "Потрібне зображення",
+    "errors.modelPathRequired": "Потрібен шлях до моделі",
+    "errors.rawTextRequired": "Потрібен текст",
+    "errors.tesseractInitFailed": "Не вдалося ініціалізувати Tesseract",
+    "errors.traineddataInvalid": "Файл мовних даних пошкоджений. Спробуйте ще раз.",
+    "errors.tesseractFailed": "Tesseract OCR не вдався: {msg}",
+    "errors.gemmaFailed": "Gemma OCR не вдався: {msg}",
+    "errors.aiNoResponse": "Нейромережа не відповіла: {msg}",
   },
   en: {
     "nav.back": "Back",
@@ -235,6 +248,19 @@ const i18n = {
     "errors.openCameraFailed": "Failed to open camera",
     "status.rotating": "Rotating…",
     "errors.rotateFailed": "Failed to rotate image",
+    "errors.unknown": "Something went wrong",
+    "errors.cancelled": "Cancelled",
+    "errors.roiZero": "The selected region is empty",
+    "errors.unknownOcrEngine": "Unknown OCR engine",
+    "errors.decodeImage": "Failed to decode image",
+    "errors.imageRequired": "Image is required",
+    "errors.modelPathRequired": "Model path is required",
+    "errors.rawTextRequired": "Text is required",
+    "errors.tesseractInitFailed": "Failed to initialize Tesseract",
+    "errors.traineddataInvalid": "Language data file is invalid. Please try again.",
+    "errors.tesseractFailed": "Tesseract OCR failed: {msg}",
+    "errors.gemmaFailed": "Gemma OCR failed: {msg}",
+    "errors.aiNoResponse": "AI did not respond: {msg}",
   },
 };
 
@@ -254,6 +280,51 @@ function t(key, vars = null) {
     }
   }
   return out;
+}
+
+function extractErrorMessage(e) {
+  if (e == null) return "";
+  if (typeof e === "string") return e;
+  if (typeof e?.message === "string") return e.message;
+  try {
+    return String(e);
+  } catch {
+    return "";
+  }
+}
+
+function formatNativeError(e) {
+  const raw = extractErrorMessage(e).trim();
+  if (!raw) return t("errors.unknown");
+
+  const rules = [
+    { re: /^cancelled$/i, key: "errors.cancelled" },
+    { re: /No native bridge/i, key: "errors.noBridge" },
+    { re: /Немає нативного мосту/i, key: "errors.noBridge" },
+    { re: /ROI має нульовий розмір/i, key: "errors.roiZero" },
+    { re: /Unknown OCR engine|Невідомий двигун OCR/i, key: "errors.unknownOcrEngine" },
+    { re: /decode image error/i, key: "errors.decodeImage" },
+    { re: /imageBase64 is required/i, key: "errors.imageRequired" },
+    { re: /modelPath is required/i, key: "errors.modelPathRequired" },
+    { re: /rawText is required/i, key: "errors.rawTextRequired" },
+    { re: /failed to init tesseract/i, key: "errors.tesseractInitFailed" },
+    { re: /downloaded traineddata is invalid/i, key: "errors.traineddataInvalid" },
+    { re: /Tesseract OCR не вдався: (.*)$/i, key: "errors.tesseractFailed", var: "msg" },
+    { re: /Tesseract OCR failed: (.*)$/i, key: "errors.tesseractFailed", var: "msg" },
+    { re: /Gemma OCR не вдався: (.*)$/i, key: "errors.gemmaFailed", var: "msg" },
+    { re: /Gemma OCR failed: (.*)$/i, key: "errors.gemmaFailed", var: "msg" },
+    { re: /Нейромережа не відповіла: (.*)$/i, key: "errors.aiNoResponse", var: "msg" },
+    { re: /AI did not respond: (.*)$/i, key: "errors.aiNoResponse", var: "msg" },
+  ];
+
+  for (const r of rules) {
+    const m = raw.match(r.re);
+    if (!m) continue;
+    if (r.var) return t(r.key, { [r.var]: m[1] || "" });
+    return t(r.key);
+  }
+
+  return raw;
 }
 
 function applyLanguage() {
@@ -312,7 +383,7 @@ async function ensureLiteRtLm(bridge) {
     await bridge.invoke("ensure_litert_lm");
     return true;
   } catch (e) {
-    setStatus(String(e?.message || e || t("errors.prepareAiFailed")));
+    setStatus(formatNativeError(e));
     return false;
   } finally {
     setBusy(false);
@@ -489,7 +560,7 @@ async function downloadModel({ urlOverride = null, filenameOverride = null } = {
       setStatus(t("errors.noModelPathReturned"));
     }
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus(formatNativeError(e));
   } finally {
     setBusy(false);
     if (ui.btnDownloadE2B) ui.btnDownloadE2B.disabled = false;
@@ -822,7 +893,7 @@ async function rotateWorkingImage(direction) {
     resetQuadToCorners();
     setStatus(t("status.ready"));
   } catch (e) {
-    setStatus(String(e?.message || e || t("errors.rotateFailed")));
+    setStatus(formatNativeError(e));
   } finally {
     setBusy(false);
   }
@@ -876,7 +947,7 @@ async function applyWarp() {
     hideHandlesAndQuad();
     setStatus(t("status.warpDone"));
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus(formatNativeError(e));
   } finally {
     setBusy(false);
     ui.btnApplyWarp.disabled = false;
@@ -978,7 +1049,7 @@ async function recognize() {
       setStatus(t("status.ready"));
     }
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus(formatNativeError(e));
   } finally {
     setBusy(false);
     ui.btnRecognize.disabled = false;
@@ -1014,7 +1085,7 @@ async function cleanWithGemma() {
     setStatus(t("status.ready"));
   } catch (e) {
     const msg = String(e?.message || e || "");
-    setStatus(msg);
+    setStatus(formatNativeError(msg));
   } finally {
     setBusy(false);
     ui.btnClean.disabled = false;
@@ -1036,7 +1107,7 @@ function wireUi() {
         await loadPhotoFromBytesBase64(shot.bytesBase64, shot.mime);
         return;
       } catch (e) {
-        setStatus(String(e?.message || e || t("errors.openCameraFailed")));
+        setStatus(formatNativeError(e));
       } finally {
         setBusy(false);
       }
