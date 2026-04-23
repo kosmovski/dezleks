@@ -8,44 +8,52 @@
   </head>
   <body>
     <header class="header">
-      <button id="btnBack" class="btn btn--secondary header__back">Назад</button>
+      <button id="btnBack" class="btn btn--secondary header__back" data-i18n="nav.back">Назад</button>
       <div class="header__center">
         <div class="header__title">Dezleks</div>
-        <div id="statusText" class="header__status">Готово</div>
+        <div id="statusText" class="header__status" data-i18n="status.ready">Готово</div>
       </div>
       <div class="header__actions">
-        <button id="btnGoSettings" class="btn btn--secondary">Налаштування</button>
+        <button id="btnGoSettings" class="btn btn--secondary" data-i18n="nav.settings">Налаштування</button>
       </div>
     </header>
 
     <main class="shell">
       <section id="screenHome" class="screen screen--active" aria-label="Стартовий екран">
         <div class="panel panel--center">
-          <div class="sectionTitle">Старт</div>
-          <div class="hint">Оберіть або зробіть фото з текстом. Далі можна виправити перспективу і виділити область для OCR.</div>
+          <div class="sectionTitle" data-i18n="home.title">Старт</div>
+          <div class="hint" data-i18n="home.hint">Оберіть або зробіть фото з текстом. Далі можна виправити перспективу і виділити область для OCR.</div>
 
           <div class="actionsGrid">
-            <button id="btnPickPhoto" class="btn btn--primary">Обрати фото</button>
-            <button id="btnTakePhoto" class="btn">Зробити фото</button>
+            <button id="btnPickPhoto" class="btn btn--primary" data-i18n="home.pickPhoto">Обрати фото</button>
+            <button id="btnTakePhoto" class="btn" data-i18n="home.takePhoto">Зробити фото</button>
           </div>
         </div>
       </section>
 
       <section id="screenSettings" class="screen" aria-label="Налаштування">
         <div class="panel">
-          <div class="sectionTitle">Налаштування</div>
+          <div class="sectionTitle" data-i18n="settings.title">Налаштування</div>
 
           <div class="settings settings--three">
             <div class="settings__group">
-              <label class="label" for="selectEngine">Двигун OCR</label>
-              <select id="selectEngine" class="select">
-                <option value="tesseract" selected>Tesseract</option>
-                <option value="gemma">Gemma</option>
+              <label class="label" for="selectUiLang" data-i18n="settings.uiLanguage">Мова інтерфейсу</label>
+              <select id="selectUiLang" class="select">
+                <option value="uk" data-i18n="lang.uk">Українська</option>
+                <option value="en" data-i18n="lang.en">English</option>
               </select>
             </div>
 
             <div class="settings__group">
-              <label class="label" for="selectLang">Мови OCR</label>
+              <label class="label" for="selectEngine" data-i18n="settings.ocrEngine">Двигун OCR</label>
+              <select id="selectEngine" class="select">
+                <option value="tesseract" selected data-i18n="settings.engineTesseract">Tesseract</option>
+                <option value="gemma" data-i18n="settings.engineGemma">Gemma</option>
+              </select>
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="selectLang" data-i18n="settings.ocrLanguages">Мови OCR</label>
               <select id="selectLang" class="select">
                 <option value="ukr+eng" selected>ukr+eng</option>
                 <option value="ukr">ukr</option>
@@ -54,44 +62,44 @@
             </div>
 
             <div class="settings__group">
-              <label class="label" for="toggleAutoCorrect">Корекція при старті</label>
+              <label class="label" for="toggleAutoCorrect" data-i18n="settings.startCorrection">Корекція при старті</label>
               <button id="toggleAutoCorrect" class="btn btn--secondary">Увімкнено</button>
             </div>
 
             <div class="settings__group">
-              <label class="label" for="toggleAiClean">Очищення нейромережею</label>
+              <label class="label" for="toggleAiClean" data-i18n="settings.aiCleanup">Очищення нейромережею</label>
               <button id="toggleAiClean" class="btn btn--secondary">Увімкнено</button>
             </div>
 
             <div class="settings__group settings__group--wide">
-              <label class="label" for="inputAiPrompt">Промпт для очищення (Gemma)</label>
-              <textarea id="inputAiPrompt" class="input" rows="6" placeholder="Порожньо — стандартний промпт."></textarea>
+              <label class="label" for="inputAiPrompt" data-i18n="settings.cleanupPrompt">Промпт для очищення (Gemma)</label>
+              <textarea id="inputAiPrompt" class="input" rows="6" data-i18n-placeholder="settings.cleanupPromptPlaceholder" placeholder="Порожньо — стандартний промпт."></textarea>
             </div>
 
             <div class="settings__group settings__group--wide">
-              <label class="label" for="inputModelPath">Шлях до моделі (Gemma)</label>
-              <input id="inputModelPath" class="input" type="text" placeholder="/path/to/model.task або .litertlm" />
+              <label class="label" for="inputModelPath" data-i18n="settings.modelPath">Шлях до моделі (Gemma)</label>
+              <input id="inputModelPath" class="input" type="text" data-i18n-placeholder="settings.modelPathPlaceholder" placeholder="/path/to/model.task або .litertlm" />
             </div>
 
             <div class="settings__group settings__group--wide">
-              <label class="label" for="inputModelUrl">Посилання для завантаження моделі</label>
+              <label class="label" for="inputModelUrl" data-i18n="settings.modelUrl">Посилання для завантаження моделі</label>
               <input id="inputModelUrl" class="input" type="text" placeholder="https://..." />
             </div>
 
             <div class="settings__group settings__group--wide">
               <div class="row">
-                <button id="btnDownloadE2B" class="btn btn--secondary">Завантажити Gemma 4 E2B</button>
-                <button id="btnDownloadE4B" class="btn btn--secondary">Завантажити Gemma 4 E4B</button>
+                <button id="btnDownloadE2B" class="btn btn--secondary" data-i18n="settings.downloadE2B">Завантажити Gemma 4 E2B</button>
+                <button id="btnDownloadE4B" class="btn btn--secondary" data-i18n="settings.downloadE4B">Завантажити Gemma 4 E4B</button>
               </div>
             </div>
 
             <div class="settings__group settings__group--wide">
-              <label class="label" for="inputModelToken">Токен доступу (не зберігається)</label>
+              <label class="label" for="inputModelToken" data-i18n="settings.modelToken">Токен доступу (не зберігається)</label>
               <input id="inputModelToken" class="input" type="password" placeholder="Hugging Face token / Bearer token" />
             </div>
 
             <div class="settings__group settings__group--wide">
-              <button id="btnDownloadModel" class="btn btn--secondary">Завантажити модель</button>
+              <button id="btnDownloadModel" class="btn btn--secondary" data-i18n="settings.downloadModel">Завантажити модель</button>
               <div id="modelDownloadStatus" class="hint"></div>
             </div>
           </div>
@@ -100,21 +108,21 @@
 
       <section id="screenEdit" class="screen" aria-label="Фото та виділення області">
         <section class="panel panel--left">
-          <div class="sectionTitle">Фото</div>
-          <div class="hint">
+          <div class="sectionTitle" data-i18n="edit.title">Фото</div>
+          <div class="hint" data-i18n="edit.hint">
             За потреби натисніть “Корекція перспективи”, відрегулюйте 4 точки, застосуйте. Потім виділіть область тексту.
           </div>
 
           <div class="toolbar">
-            <button id="btnToggleWarp" class="btn btn--secondary">Корекція перспективи</button>
-            <button id="btnApplyWarp" class="btn btn--secondary">Застосувати</button>
-            <button id="btnRotateLeft" class="btn btn--secondary">⟲ 90°</button>
-            <button id="btnRotateRight" class="btn btn--secondary">⟳ 90°</button>
-            <button id="btnRecognize" class="btn btn--primary">Розпізнати</button>
+            <button id="btnToggleWarp" class="btn btn--secondary" data-i18n="edit.perspective">Корекція перспективи</button>
+            <button id="btnApplyWarp" class="btn btn--secondary" data-i18n="edit.apply">Застосувати</button>
+            <button id="btnRotateLeft" class="btn btn--secondary" data-i18n="edit.rotateLeft">⟲ 90°</button>
+            <button id="btnRotateRight" class="btn btn--secondary" data-i18n="edit.rotateRight">⟳ 90°</button>
+            <button id="btnRecognize" class="btn btn--primary" data-i18n="edit.recognize">Розпізнати</button>
           </div>
 
           <div id="imageStage" class="imageStage" aria-label="Зона фото">
-            <img id="imgPreview" class="imageStage__img" alt="Фото" />
+            <img id="imgPreview" class="imageStage__img" data-i18n-alt="edit.photoAlt" alt="Фото" />
             <svg id="quadSvg" class="imageStage__svg" viewBox="0 0 100 100" preserveAspectRatio="none">
               <polygon id="quadPoly" points="" />
             </svg>
@@ -133,42 +141,42 @@
       <section id="screenResult" class="screen" aria-label="Розпізнаний текст">
         <section class="panel panel--right">
           <div class="resultHeader">
-            <div class="sectionTitle">Результат</div>
+            <div class="sectionTitle" data-i18n="result.title">Результат</div>
             <div class="resultHeader__actions">
-              <button id="btnToggleTextSettings" class="btn btn--secondary">Налаштування вигляду</button>
-              <button id="btnClean" class="btn btn--secondary">Очистити (Gemma)</button>
+              <button id="btnToggleTextSettings" class="btn btn--secondary" data-i18n="result.viewSettings">Налаштування вигляду</button>
+              <button id="btnClean" class="btn btn--secondary" data-i18n="result.clean">Очистити (Gemma)</button>
             </div>
           </div>
 
           <div id="textSettings" class="settings settings--hidden">
             <div class="settings__group">
-              <label class="label" for="fontFamily">Шрифт</label>
+              <label class="label" for="fontFamily" data-i18n="result.font">Шрифт</label>
               <select id="fontFamily" class="select">
                 <option value="OpenDyslexic-Regular" selected>OpenDyslexic Regular</option>
                 <option value="OpenDyslexic-Bold">OpenDyslexic Bold</option>
                 <option value="OpenDyslexic-Italic">OpenDyslexic Italic</option>
                 <option value="OpenDyslexic-BoldItalic">OpenDyslexic BoldItalic</option>
-                <option value="system">Системний</option>
+                <option value="system" data-i18n="result.systemFont">Системний</option>
               </select>
             </div>
 
             <div class="settings__group">
-              <label class="label" for="fontSize">Розмір</label>
+              <label class="label" for="fontSize" data-i18n="result.fontSize">Розмір</label>
               <input id="fontSize" class="input" type="number" min="12" max="64" step="1" />
             </div>
 
             <div class="settings__group">
-              <label class="label" for="lineHeight">Міжряддя</label>
+              <label class="label" for="lineHeight" data-i18n="result.lineHeight">Міжряддя</label>
               <input id="lineHeight" class="input" type="number" min="1.2" max="2.4" step="0.05" />
             </div>
 
             <div class="settings__group">
-              <label class="label" for="bgColor">Фон</label>
+              <label class="label" for="bgColor" data-i18n="result.background">Фон</label>
               <input id="bgColor" class="input input--color" type="color" />
             </div>
 
             <div class="settings__group">
-              <label class="label" for="textColor">Текст</label>
+              <label class="label" for="textColor" data-i18n="result.textColor">Текст</label>
               <input id="textColor" class="input input--color" type="color" />
             </div>
           </div>
@@ -184,7 +192,7 @@
     <div id="busyOverlay" class="busyOverlay hidden" aria-hidden="true">
       <div class="busyOverlay__card" role="status" aria-live="polite">
         <div class="spinner" aria-hidden="true"></div>
-        <div id="busyText" class="busyOverlay__text">Обробка…</div>
+        <div id="busyText" class="busyOverlay__text" data-i18n="common.processing">Обробка…</div>
       </div>
     </div>
 

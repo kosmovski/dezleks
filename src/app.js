@@ -20,6 +20,7 @@ const ui = {
   btnDownloadE4B: document.getElementById("btnDownloadE4B"),
   btnDownloadModel: document.getElementById("btnDownloadModel"),
   modelDownloadStatus: document.getElementById("modelDownloadStatus"),
+  selectUiLang: document.getElementById("selectUiLang"),
   selectEngine: document.getElementById("selectEngine"),
   selectLang: document.getElementById("selectLang"),
   imgPreview: document.getElementById("imgPreview"),
@@ -64,6 +65,7 @@ const state = {
   quad: null,
   rawText: "",
   settings: {
+    uiLang: "uk",
     engine: "tesseract",
     lang: "ukr+eng",
     autoCorrect: true,
@@ -81,6 +83,199 @@ const state = {
   },
 };
 
+const i18n = {
+  uk: {
+    "nav.back": "Назад",
+    "nav.settings": "Налаштування",
+    "status.ready": "Готово",
+    "common.processing": "Обробка…",
+    "common.on": "Увімкнено",
+    "common.off": "Вимкнено",
+    "home.title": "Старт",
+    "home.hint": "Оберіть або зробіть фото з текстом. Далі можна виправити перспективу і виділити область для OCR.",
+    "home.pickPhoto": "Обрати фото",
+    "home.takePhoto": "Зробити фото",
+    "settings.title": "Налаштування",
+    "settings.uiLanguage": "Мова інтерфейсу",
+    "lang.uk": "Українська",
+    "lang.en": "English",
+    "settings.ocrEngine": "Двигун OCR",
+    "settings.engineTesseract": "Tesseract",
+    "settings.engineGemma": "Gemma",
+    "settings.ocrLanguages": "Мови OCR",
+    "settings.startCorrection": "Корекція при старті",
+    "settings.aiCleanup": "Очищення нейромережею",
+    "settings.cleanupPrompt": "Промпт для очищення (Gemma)",
+    "settings.cleanupPromptPlaceholder": "Порожньо — стандартний промпт.",
+    "settings.modelPath": "Шлях до моделі (Gemma)",
+    "settings.modelPathPlaceholder": "/path/to/model.task або .litertlm",
+    "settings.modelUrl": "Посилання для завантаження моделі",
+    "settings.downloadE2B": "Завантажити Gemma 4 E2B",
+    "settings.downloadE4B": "Завантажити Gemma 4 E4B",
+    "settings.modelToken": "Токен доступу (не зберігається)",
+    "settings.downloadModel": "Завантажити модель",
+    "edit.title": "Фото",
+    "edit.hint": "За потреби натисніть “Корекція перспективи”, відрегулюйте 4 точки, застосуйте. Потім виділіть область тексту.",
+    "edit.perspective": "Корекція перспективи",
+    "edit.apply": "Застосувати",
+    "edit.rotateLeft": "⟲ 90°",
+    "edit.rotateRight": "⟳ 90°",
+    "edit.recognize": "Розпізнати",
+    "edit.photoAlt": "Фото",
+    "result.title": "Результат",
+    "result.viewSettings": "Налаштування вигляду",
+    "result.clean": "Очистити (Gemma)",
+    "result.font": "Шрифт",
+    "result.systemFont": "Системний",
+    "result.fontSize": "Розмір",
+    "result.lineHeight": "Міжряддя",
+    "result.background": "Фон",
+    "result.textColor": "Текст",
+    "status.prepareAi": "Підготовка нейромережі…",
+    "errors.prepareAiFailed": "Не вдалося підготувати нейромережу",
+    "errors.noBridge": "Немає нативного мосту (запустіть як Tauri застосунок)",
+    "errors.enterModelUrl": "Вкажіть посилання на модель",
+    "status.downloadingModel": "Завантаження моделі…",
+    "status.modelDownloaded": "Модель завантажено",
+    "errors.noModelPathReturned": "Не вдалося отримати шлях до моделі",
+    "status.loadingPhoto": "Завантаження фото…",
+    "errors.showImageFailed": "Не вдалося показати зображення",
+    "status.chooseRoiOrFixPerspective": "Виділіть область або виправте перспективу",
+    "errors.noPhoto": "Немає фото",
+    "status.warping": "Корекція перспективи…",
+    "status.warpDone": "Готово. Виділіть область тексту",
+    "errors.pickPhotoFirst": "Спочатку оберіть фото",
+    "status.recognizing": "Розпізнавання…",
+    "status.roiNotSelectedRecognizeAll": "Область не вибрано — розпізнаю все фото",
+    "errors.selectRoiFirst": "Спочатку виділіть область",
+    "errors.modelPathRequiredForGemmaOcr": "Для Gemma OCR вкажіть шлях до моделі в налаштуваннях",
+    "status.preparingGemmaOcr": "Підготовка Gemma OCR…",
+    "status.recognizingGemma": "Розпізнавання (Gemma)…",
+    "errors.emptyResultTryOther": "Нульовий результат. Спробуйте іншу область або мову OCR.",
+    "status.cleaning": "Очищення…",
+    "errors.ocrDoneCleanFailed": "OCR готово. Очищення не вдалося: {msg}",
+    "errors.noTextToClean": "Немає тексту для очищення",
+    "status.openingCamera": "Відкриваю камеру…",
+    "errors.openCameraFailed": "Не вдалося відкрити камеру",
+    "status.rotating": "Поворот…",
+    "errors.rotateFailed": "Не вдалося повернути зображення",
+  },
+  en: {
+    "nav.back": "Back",
+    "nav.settings": "Settings",
+    "status.ready": "Ready",
+    "common.processing": "Working…",
+    "common.on": "On",
+    "common.off": "Off",
+    "home.title": "Start",
+    "home.hint": "Pick a photo with text or take a new one. Then you can fix perspective and select a region for OCR.",
+    "home.pickPhoto": "Choose photo",
+    "home.takePhoto": "Take photo",
+    "settings.title": "Settings",
+    "settings.uiLanguage": "Interface language",
+    "lang.uk": "Ukrainian",
+    "lang.en": "English",
+    "settings.ocrEngine": "OCR engine",
+    "settings.engineTesseract": "Tesseract",
+    "settings.engineGemma": "Gemma",
+    "settings.ocrLanguages": "OCR languages",
+    "settings.startCorrection": "Auto-correction on load",
+    "settings.aiCleanup": "AI cleanup",
+    "settings.cleanupPrompt": "Cleanup prompt (Gemma)",
+    "settings.cleanupPromptPlaceholder": "Empty = default prompt.",
+    "settings.modelPath": "Model path (Gemma)",
+    "settings.modelPathPlaceholder": "/path/to/model.task or .litertlm",
+    "settings.modelUrl": "Model download URL",
+    "settings.downloadE2B": "Download Gemma 4 E2B",
+    "settings.downloadE4B": "Download Gemma 4 E4B",
+    "settings.modelToken": "Access token (not saved)",
+    "settings.downloadModel": "Download model",
+    "edit.title": "Photo",
+    "edit.hint": "If needed, tap “Perspective correction”, adjust 4 points, apply, then select the text region.",
+    "edit.perspective": "Perspective correction",
+    "edit.apply": "Apply",
+    "edit.rotateLeft": "⟲ 90°",
+    "edit.rotateRight": "⟳ 90°",
+    "edit.recognize": "Recognize",
+    "edit.photoAlt": "Photo",
+    "result.title": "Result",
+    "result.viewSettings": "Reading settings",
+    "result.clean": "Clean up (Gemma)",
+    "result.font": "Font",
+    "result.systemFont": "System",
+    "result.fontSize": "Size",
+    "result.lineHeight": "Line height",
+    "result.background": "Background",
+    "result.textColor": "Text",
+    "status.prepareAi": "Preparing AI…",
+    "errors.prepareAiFailed": "Failed to prepare AI",
+    "errors.noBridge": "No native bridge (run as a Tauri app)",
+    "errors.enterModelUrl": "Enter model URL",
+    "status.downloadingModel": "Downloading model…",
+    "status.modelDownloaded": "Model downloaded",
+    "errors.noModelPathReturned": "Failed to get model path",
+    "status.loadingPhoto": "Loading photo…",
+    "errors.showImageFailed": "Failed to display image",
+    "status.chooseRoiOrFixPerspective": "Select a region or fix perspective",
+    "errors.noPhoto": "No photo",
+    "status.warping": "Correcting perspective…",
+    "status.warpDone": "Done. Select the text region",
+    "errors.pickPhotoFirst": "Pick a photo first",
+    "status.recognizing": "Recognizing…",
+    "status.roiNotSelectedRecognizeAll": "No region selected — recognizing the whole photo",
+    "errors.selectRoiFirst": "Select a region first",
+    "errors.modelPathRequiredForGemmaOcr": "For Gemma OCR, set the model path in Settings",
+    "status.preparingGemmaOcr": "Preparing Gemma OCR…",
+    "status.recognizingGemma": "Recognizing (Gemma)…",
+    "errors.emptyResultTryOther": "Empty result. Try a different region or OCR language.",
+    "status.cleaning": "Cleaning…",
+    "errors.ocrDoneCleanFailed": "OCR done. Cleanup failed: {msg}",
+    "errors.noTextToClean": "No text to clean",
+    "status.openingCamera": "Opening camera…",
+    "errors.openCameraFailed": "Failed to open camera",
+    "status.rotating": "Rotating…",
+    "errors.rotateFailed": "Failed to rotate image",
+  },
+};
+
+function currentUiLang() {
+  const lang = (state.settings.uiLang || "uk").trim().toLowerCase();
+  return lang === "en" ? "en" : "uk";
+}
+
+function t(key, vars = null) {
+  const lang = currentUiLang();
+  const dict = i18n[lang] || i18n.uk;
+  const fallback = i18n.uk[key] || key;
+  let out = dict[key] || fallback;
+  if (vars && typeof vars === "object") {
+    for (const [k, v] of Object.entries(vars)) {
+      out = out.replaceAll(`{${k}}`, String(v));
+    }
+  }
+  return out;
+}
+
+function applyLanguage() {
+  const lang = currentUiLang();
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (!key) return;
+    el.textContent = t(key);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (!key) return;
+    el.setAttribute("placeholder", t(key));
+  });
+  document.querySelectorAll("[data-i18n-alt]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-alt");
+    if (!key) return;
+    el.setAttribute("alt", t(key));
+  });
+}
+
 function setStatus(text) {
   ui.statusText.textContent = text;
 }
@@ -88,7 +283,7 @@ function setStatus(text) {
 function setBusy(isBusy, text) {
   if (!ui.busyOverlay) return;
   if (isBusy) {
-    if (ui.busyText) ui.busyText.textContent = text || "Обробка…";
+    if (ui.busyText) ui.busyText.textContent = text || t("common.processing");
     ui.busyOverlay.classList.remove("hidden");
     ui.busyOverlay.setAttribute("aria-hidden", "false");
     return;
@@ -111,13 +306,13 @@ function getEventApi() {
 
 async function ensureLiteRtLm(bridge) {
   if (!bridge) return false;
-  setStatus("Підготовка нейромережі…");
-  setBusy(true, "Підготовка нейромережі…");
+  setStatus(t("status.prepareAi"));
+  setBusy(true, t("status.prepareAi"));
   try {
     await bridge.invoke("ensure_litert_lm");
     return true;
   } catch (e) {
-    setStatus(String(e?.message || e || "Не вдалося підготувати нейромережу"));
+    setStatus(String(e?.message || e || t("errors.prepareAiFailed")));
     return false;
   } finally {
     setBusy(false);
@@ -197,10 +392,11 @@ function applyReadingStyle() {
 }
 
 function updateSettingsControls() {
+  if (ui.selectUiLang) ui.selectUiLang.value = currentUiLang();
   ui.selectEngine.value = state.settings.engine;
   ui.selectLang.value = state.settings.lang;
-  ui.toggleAutoCorrect.textContent = state.settings.autoCorrect ? "Увімкнено" : "Вимкнено";
-  ui.toggleAiClean.textContent = state.settings.aiClean ? "Увімкнено" : "Вимкнено";
+  ui.toggleAutoCorrect.textContent = state.settings.autoCorrect ? t("common.on") : t("common.off");
+  ui.toggleAiClean.textContent = state.settings.aiClean ? t("common.on") : t("common.off");
   if (ui.inputAiPrompt) ui.inputAiPrompt.value = state.settings.aiPrompt || "";
   ui.inputModelPath.value = state.settings.modelPath || "";
   if (ui.inputModelUrl) ui.inputModelUrl.value = state.settings.modelUrl || "";
@@ -249,7 +445,7 @@ function setupModelDownloadListener() {
     const label = pct == null ? `${formatBytes(done)}` : `${pct}% (${formatBytes(done)} / ${formatBytes(total)})`;
     setModelDownloadStatus(label);
     if (ui.busyOverlay && !ui.busyOverlay.classList.contains("hidden")) {
-      if (ui.busyText) ui.busyText.textContent = `Завантаження моделі… ${label}`;
+      if (ui.busyText) ui.busyText.textContent = `${t("status.downloadingModel")} ${label}`;
     }
   });
 }
@@ -257,18 +453,18 @@ function setupModelDownloadListener() {
 async function downloadModel({ urlOverride = null, filenameOverride = null } = {}) {
   const bridge = getBridge();
   if (!bridge) {
-    setStatus("Немає нативного мосту (запустіть як Tauri застосунок)");
+    setStatus(t("errors.noBridge"));
     return;
   }
   const url = (urlOverride || ui.inputModelUrl?.value || "").trim();
   if (!url) {
-    setStatus("Вкажіть посилання на модель");
+    setStatus(t("errors.enterModelUrl"));
     return;
   }
 
   setModelDownloadStatus("");
-  setStatus("Завантаження моделі…");
-  setBusy(true, "Завантаження моделі…");
+  setStatus(t("status.downloadingModel"));
+  setBusy(true, t("status.downloadingModel"));
   if (ui.btnDownloadE2B) ui.btnDownloadE2B.disabled = true;
   if (ui.btnDownloadE4B) ui.btnDownloadE4B.disabled = true;
   if (ui.btnDownloadModel) ui.btnDownloadModel.disabled = true;
@@ -287,10 +483,10 @@ async function downloadModel({ urlOverride = null, filenameOverride = null } = {
       persistSettings();
       updateSettingsControls();
       warmupGemmaInBackground();
-      setModelDownloadStatus("Готово");
-      setStatus("Модель завантажено");
+      setModelDownloadStatus(t("status.ready"));
+      setStatus(t("status.modelDownloaded"));
     } else {
-      setStatus("Не вдалося отримати шлях до моделі");
+      setStatus(t("errors.noModelPathReturned"));
     }
   } catch (e) {
     setStatus(String(e?.message || e));
@@ -541,20 +737,20 @@ async function setWorkingImageFromBase64(bytesBase64, width, height) {
   ui.imgPreview.src = base64ToDataUrl(bytesBase64, "image/png");
   await new Promise((resolve, reject) => {
     ui.imgPreview.onload = () => resolve();
-    ui.imgPreview.onerror = () => reject(new Error("Не вдалося показати зображення"));
+    ui.imgPreview.onerror = () => reject(new Error(t("errors.showImageFailed")));
   });
   ui.imgPreview.style.display = "block";
 }
 
 async function loadPhotoFromBytesBase64(bytesBase64, mime = "image/jpeg") {
-  setStatus("Завантаження фото…");
-  setBusy(true, "Завантаження фото…");
+  setStatus(t("status.loadingPhoto"));
+  setBusy(true, t("status.loadingPhoto"));
   state.roi = null;
   updateRoiText();
   clearRoiBox();
   hideHandlesAndQuad();
   state.mode = "roi";
-  ui.btnToggleWarp.textContent = "Корекція перспективи";
+  ui.btnToggleWarp.textContent = t("edit.perspective");
   ui.btnApplyWarp.style.display = "none";
   ui.btnRecognize.disabled = false;
 
@@ -564,25 +760,25 @@ async function loadPhotoFromBytesBase64(bytesBase64, mime = "image/jpeg") {
   ui.imgPreview.src = base64ToDataUrl(bytesBase64, mime || "image/jpeg");
   await new Promise((resolve, reject) => {
     ui.imgPreview.onload = () => resolve();
-    ui.imgPreview.onerror = () => reject(new Error("Не вдалося показати зображення"));
+    ui.imgPreview.onerror = () => reject(new Error(t("errors.showImageFailed")));
   });
   ui.imgPreview.style.display = "block";
   setBusy(false);
 
   resetQuadToCorners();
   showScreen("edit");
-  setStatus("Виділіть область або виправте перспективу");
+  setStatus(t("status.chooseRoiOrFixPerspective"));
 }
 
 async function loadPhoto(file) {
-  setStatus("Завантаження фото…");
-  setBusy(true, "Завантаження фото…");
+  setStatus(t("status.loadingPhoto"));
+  setBusy(true, t("status.loadingPhoto"));
   state.roi = null;
   updateRoiText();
   clearRoiBox();
   hideHandlesAndQuad();
   state.mode = "roi";
-  ui.btnToggleWarp.textContent = "Корекція перспективи";
+  ui.btnToggleWarp.textContent = t("edit.perspective");
   ui.btnApplyWarp.style.display = "none";
   ui.btnRecognize.disabled = false;
 
@@ -597,18 +793,18 @@ async function loadPhoto(file) {
 
   resetQuadToCorners();
   showScreen("edit");
-  setStatus("Виділіть область або виправте перспективу");
+  setStatus(t("status.chooseRoiOrFixPerspective"));
 }
 
 async function rotateWorkingImage(direction) {
   const bridge = getBridge();
   if (!bridge) {
-    setStatus("Немає нативного мосту (запустіть як Tauri застосунок)");
+    setStatus(t("errors.noBridge"));
     return;
   }
   if (!state.workingImage) return;
-  setStatus("Поворот…");
-  setBusy(true, "Поворот…");
+  setStatus(t("status.rotating"));
+  setBusy(true, t("status.rotating"));
   try {
     const rotated = await bridge.invoke("rotate_image", {
       image: currentImagePayload(),
@@ -620,13 +816,13 @@ async function rotateWorkingImage(direction) {
     clearRoiBox();
     hideHandlesAndQuad();
     state.mode = "roi";
-    ui.btnToggleWarp.textContent = "Корекція перспективи";
+    ui.btnToggleWarp.textContent = t("edit.perspective");
     ui.btnApplyWarp.style.display = "none";
     ui.btnRecognize.disabled = false;
     resetQuadToCorners();
-    setStatus("Готово");
+    setStatus(t("status.ready"));
   } catch (e) {
-    setStatus(String(e?.message || e || "Не вдалося повернути зображення"));
+    setStatus(String(e?.message || e || t("errors.rotateFailed")));
   } finally {
     setBusy(false);
   }
@@ -639,7 +835,7 @@ function toggleWarpMode() {
     return;
   }
   state.mode = "warp";
-  ui.btnToggleWarp.textContent = "Застосувати";
+  ui.btnToggleWarp.textContent = t("edit.apply");
   ui.btnApplyWarp.style.display = "none";
   ui.btnRecognize.disabled = true;
   clearRoiBox();
@@ -651,17 +847,17 @@ function toggleWarpMode() {
 
 async function applyWarp() {
   if (!state.workingImage || !state.quad) {
-    setStatus("Немає фото");
+    setStatus(t("errors.noPhoto"));
     return;
   }
   const bridge = getBridge();
   if (!bridge) {
-    setStatus("Немає нативного мосту (запустіть як Tauri застосунок)");
+    setStatus(t("errors.noBridge"));
     return;
   }
 
-  setStatus("Корекція перспективи…");
-  setBusy(true, "Корекція перспективи…");
+  setStatus(t("status.warping"));
+  setBusy(true, t("status.warping"));
   ui.btnApplyWarp.disabled = true;
   ui.btnToggleWarp.disabled = true;
   ui.btnRecognize.disabled = true;
@@ -674,11 +870,11 @@ async function applyWarp() {
     clearRoiBox();
     resetQuadToCorners();
     state.mode = "roi";
-    ui.btnToggleWarp.textContent = "Корекція перспективи";
+    ui.btnToggleWarp.textContent = t("edit.perspective");
     ui.btnApplyWarp.style.display = "none";
     ui.btnRecognize.disabled = false;
     hideHandlesAndQuad();
-    setStatus("Готово. Виділіть область тексту");
+    setStatus(t("status.warpDone"));
   } catch (e) {
     setStatus(String(e?.message || e));
   } finally {
@@ -691,12 +887,12 @@ async function applyWarp() {
 
 async function recognize() {
   if (!state.workingImage) {
-    setStatus("Спочатку оберіть фото");
+    setStatus(t("errors.pickPhotoFirst"));
     return;
   }
 
-  setStatus("Розпізнавання…");
-  setBusy(true, "Розпізнавання…");
+  setStatus(t("status.recognizing"));
+  setBusy(true, t("status.recognizing"));
   await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
   if (!state.roi) {
@@ -705,9 +901,9 @@ async function recognize() {
     if (nw && nh) {
       state.roi = { x: 0, y: 0, w: nw, h: nh };
       updateRoiText();
-      setStatus("Область не вибрано — розпізнаю все фото");
+      setStatus(t("status.roiNotSelectedRecognizeAll"));
     } else {
-      setStatus("Спочатку виділіть область");
+      setStatus(t("errors.selectRoiFirst"));
       setBusy(false);
       return;
     }
@@ -715,7 +911,7 @@ async function recognize() {
 
   const bridge = getBridge();
   if (!bridge) {
-    setStatus("Немає нативного мосту (запустіть як Tauri застосунок)");
+    setStatus(t("errors.noBridge"));
     setBusy(false);
     return;
   }
@@ -727,15 +923,15 @@ async function recognize() {
     const modelPath = state.settings.modelPath?.trim() || "";
     if (engineToUse === "gemma") {
       if (!modelPath) {
-        setStatus("Для Gemma OCR вкажіть шлях до моделі в налаштуваннях");
+        setStatus(t("errors.modelPathRequiredForGemmaOcr"));
         return;
       }
-      setStatus("Підготовка Gemma OCR…");
-      setBusy(true, "Підготовка Gemma OCR…");
+      setStatus(t("status.preparingGemmaOcr"));
+      setBusy(true, t("status.preparingGemmaOcr"));
       await new Promise((resolve) => requestAnimationFrame(() => resolve()));
       await bridge.invoke("ensure_gemma_ocr_runtime");
-      setStatus("Розпізнавання (Gemma)…");
-      setBusy(true, "Розпізнавання (Gemma)…");
+      setStatus(t("status.recognizingGemma"));
+      setBusy(true, t("status.recognizingGemma"));
       await new Promise((resolve) => requestAnimationFrame(() => resolve()));
     }
 
@@ -748,7 +944,7 @@ async function recognize() {
     });
     state.rawText = result?.rawText || "";
     if (!state.rawText.trim()) {
-      setStatus("Нульовий результат. Спробуйте іншу область або мову OCR.");
+      setStatus(t("errors.emptyResultTryOther"));
       return;
     }
     setOutputText(state.rawText);
@@ -759,8 +955,8 @@ async function recognize() {
     if (shouldClean) {
       const ok = await ensureLiteRtLm(bridge);
       if (!ok) return;
-      setStatus("Очищення…");
-      setBusy(true, "Очищення…");
+      setStatus(t("status.cleaning"));
+      setBusy(true, t("status.cleaning"));
       try {
         const promptOverride = (state.settings.aiPrompt || "").trim();
         const cleaned = await bridge.invoke("clean_text_gemma", {
@@ -773,13 +969,13 @@ async function recognize() {
           state.rawText = nextText;
           setOutputText(state.rawText);
         }
-        setStatus("Готово");
+        setStatus(t("status.ready"));
       } catch (e) {
         const msg = String(e?.message || e || "");
-        setStatus(`OCR готово. Очищення не вдалося: ${msg}`);
+        setStatus(t("errors.ocrDoneCleanFailed", { msg }));
       }
     } else {
-      setStatus("Готово");
+      setStatus(t("status.ready"));
     }
   } catch (e) {
     setStatus(String(e?.message || e));
@@ -792,16 +988,16 @@ async function recognize() {
 async function cleanWithGemma() {
   const bridge = getBridge();
   if (!bridge) {
-    setStatus("Немає нативного мосту (запустіть як Tauri застосунок)");
+    setStatus(t("errors.noBridge"));
     return;
   }
   if (!state.rawText.trim()) {
-    setStatus("Немає тексту для очищення");
+    setStatus(t("errors.noTextToClean"));
     return;
   }
 
-  setStatus("Очищення…");
-  setBusy(true, "Очищення…");
+  setStatus(t("status.cleaning"));
+  setBusy(true, t("status.cleaning"));
   ui.btnClean.disabled = true;
 
   try {
@@ -815,7 +1011,7 @@ async function cleanWithGemma() {
     });
     state.rawText = cleaned || "";
     setOutputText(state.rawText);
-    setStatus("Готово");
+    setStatus(t("status.ready"));
   } catch (e) {
     const msg = String(e?.message || e || "");
     setStatus(msg);
@@ -833,14 +1029,14 @@ function wireUi() {
   ui.btnTakePhoto.addEventListener("click", async () => {
     const bridge = getBridge();
     if (bridge && /Android/i.test(navigator.userAgent || "")) {
-      setStatus("Відкриваю камеру…");
-      setBusy(true, "Відкриваю камеру…");
+      setStatus(t("status.openingCamera"));
+      setBusy(true, t("status.openingCamera"));
       try {
         const shot = await bridge.invoke("take_photo");
         await loadPhotoFromBytesBase64(shot.bytesBase64, shot.mime);
         return;
       } catch (e) {
-        setStatus(String(e?.message || e || "Не вдалося відкрити камеру"))
+        setStatus(String(e?.message || e || t("errors.openCameraFailed")));
       } finally {
         setBusy(false);
       }
@@ -865,18 +1061,26 @@ function wireUi() {
     state.settings.engine = ui.selectEngine.value;
     persistSettings();
   });
+  if (ui.selectUiLang) {
+    ui.selectUiLang.addEventListener("change", () => {
+      state.settings.uiLang = ui.selectUiLang.value;
+      persistSettings();
+      applyLanguage();
+      updateSettingsControls();
+    });
+  }
   ui.selectLang.addEventListener("change", () => {
     state.settings.lang = ui.selectLang.value;
     persistSettings();
   });
   ui.toggleAutoCorrect.addEventListener("click", () => {
     state.settings.autoCorrect = !state.settings.autoCorrect;
-    ui.toggleAutoCorrect.textContent = state.settings.autoCorrect ? "Увімкнено" : "Вимкнено";
+    ui.toggleAutoCorrect.textContent = state.settings.autoCorrect ? t("common.on") : t("common.off");
     persistSettings();
   });
   ui.toggleAiClean.addEventListener("click", () => {
     state.settings.aiClean = !state.settings.aiClean;
-    ui.toggleAiClean.textContent = state.settings.aiClean ? "Увімкнено" : "Вимкнено";
+    ui.toggleAiClean.textContent = state.settings.aiClean ? t("common.on") : t("common.off");
     persistSettings();
   });
   if (ui.inputAiPrompt) {
@@ -955,11 +1159,12 @@ function wireUi() {
 }
 
 tryLoadSettings();
+applyLanguage();
 updateSettingsControls();
 applyReadingStyle();
 setupModelDownloadListener();
 installOverlayInteractions();
 wireUi();
 showScreen("home", { push: false });
-setStatus("Готово");
+setStatus(t("status.ready"));
 warmupGemmaInBackground();
