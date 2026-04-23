@@ -101,6 +101,7 @@ const i18n = {
     "lang.en": "English",
     "settings.ocrEngine": "Двигун OCR",
     "settings.engineTesseract": "Tesseract",
+    "settings.engineMlkit": "Google ML Kit",
     "settings.engineGemma": "Gemma",
     "settings.ocrLanguages": "Мови OCR",
     "settings.startCorrection": "Корекція при старті",
@@ -146,6 +147,9 @@ const i18n = {
     "status.warpDone": "Готово. Виділіть область тексту",
     "errors.pickPhotoFirst": "Спочатку оберіть фото",
     "status.recognizing": "Розпізнавання…",
+    "status.recognizingTimer": "Розпізнавання... {time}с",
+    "status.cleaningTimer": "Очищення... {time}с",
+    "status.recognizingAvg": "(середній: {avg}с)",
     "status.roiNotSelectedRecognizeAll": "Область не вибрано — розпізнаю все фото",
     "errors.selectRoiFirst": "Спочатку виділіть область",
     "errors.modelPathRequiredForGemmaOcr": "Для Gemma OCR вкажіть шлях до моделі в налаштуваннях",
@@ -170,6 +174,7 @@ const i18n = {
     "errors.tesseractInitFailed": "Не вдалося ініціалізувати Tesseract",
     "errors.traineddataInvalid": "Файл мовних даних пошкоджений. Спробуйте ще раз.",
     "errors.tesseractFailed": "Tesseract OCR не вдався: {msg}",
+    "errors.mlkitFailed": "ML Kit OCR не вдався: {msg}",
     "errors.gemmaFailed": "Gemma OCR не вдався: {msg}",
     "errors.aiNoResponse": "Нейромережа не відповіла: {msg}",
   },
@@ -190,6 +195,7 @@ const i18n = {
     "lang.en": "English",
     "settings.ocrEngine": "OCR engine",
     "settings.engineTesseract": "Tesseract",
+    "settings.engineMlkit": "Google ML Kit",
     "settings.engineGemma": "Gemma",
     "settings.ocrLanguages": "OCR languages",
     "settings.startCorrection": "Auto-correction on load",
@@ -235,6 +241,9 @@ const i18n = {
     "status.warpDone": "Done. Select the text region",
     "errors.pickPhotoFirst": "Pick a photo first",
     "status.recognizing": "Recognizing…",
+    "status.recognizingTimer": "Recognizing... {time}s",
+    "status.cleaningTimer": "Cleaning... {time}s",
+    "status.recognizingAvg": "(avg: {avg}s)",
     "status.roiNotSelectedRecognizeAll": "No region selected — recognizing the whole photo",
     "errors.selectRoiFirst": "Select a region first",
     "errors.modelPathRequiredForGemmaOcr": "For Gemma OCR, set the model path in Settings",
@@ -259,6 +268,7 @@ const i18n = {
     "errors.tesseractInitFailed": "Failed to initialize Tesseract",
     "errors.traineddataInvalid": "Language data file is invalid. Please try again.",
     "errors.tesseractFailed": "Tesseract OCR failed: {msg}",
+    "errors.mlkitFailed": "ML Kit OCR failed: {msg}",
     "errors.gemmaFailed": "Gemma OCR failed: {msg}",
     "errors.aiNoResponse": "AI did not respond: {msg}",
   },
@@ -311,6 +321,8 @@ function formatNativeError(e) {
     { re: /downloaded traineddata is invalid/i, key: "errors.traineddataInvalid" },
     { re: /Tesseract OCR не вдався: (.*)$/i, key: "errors.tesseractFailed", var: "msg" },
     { re: /Tesseract OCR failed: (.*)$/i, key: "errors.tesseractFailed", var: "msg" },
+    { re: /ML Kit OCR не вдався: (.*)$/i, key: "errors.mlkitFailed", var: "msg" },
+    { re: /ML Kit OCR failed: (.*)$/i, key: "errors.mlkitFailed", var: "msg" },
     { re: /Gemma OCR не вдався: (.*)$/i, key: "errors.gemmaFailed", var: "msg" },
     { re: /Gemma OCR failed: (.*)$/i, key: "errors.gemmaFailed", var: "msg" },
     { re: /Нейромережа не відповіла: (.*)$/i, key: "errors.aiNoResponse", var: "msg" },
@@ -377,16 +389,12 @@ function getEventApi() {
 
 async function ensureLiteRtLm(bridge) {
   if (!bridge) return false;
-  setStatus(t("status.prepareAi"));
-  setBusy(true, t("status.prepareAi"));
   try {
     await bridge.invoke("ensure_litert_lm");
     return true;
   } catch (e) {
     setStatus(formatNativeError(e));
     return false;
-  } finally {
-    setBusy(false);
   }
 }
 
@@ -816,6 +824,7 @@ async function setWorkingImageFromBase64(bytesBase64, width, height) {
 async function loadPhotoFromBytesBase64(bytesBase64, mime = "image/jpeg") {
   setStatus(t("status.loadingPhoto"));
   setBusy(true, t("status.loadingPhoto"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
   state.roi = null;
   updateRoiText();
   clearRoiBox();
@@ -844,6 +853,7 @@ async function loadPhotoFromBytesBase64(bytesBase64, mime = "image/jpeg") {
 async function loadPhoto(file) {
   setStatus(t("status.loadingPhoto"));
   setBusy(true, t("status.loadingPhoto"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
   state.roi = null;
   updateRoiText();
   clearRoiBox();
@@ -876,6 +886,7 @@ async function rotateWorkingImage(direction) {
   if (!state.workingImage) return;
   setStatus(t("status.rotating"));
   setBusy(true, t("status.rotating"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
   try {
     const rotated = await bridge.invoke("rotate_image", {
       image: currentImagePayload(),
@@ -929,6 +940,7 @@ async function applyWarp() {
 
   setStatus(t("status.warping"));
   setBusy(true, t("status.warping"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
   ui.btnApplyWarp.disabled = true;
   ui.btnToggleWarp.disabled = true;
   ui.btnRecognize.disabled = true;
@@ -956,6 +968,55 @@ async function applyWarp() {
   }
 }
 
+let avgTimes = JSON.parse(localStorage.getItem("dezleks_avg_times") || "{}");
+
+function getAvgTimeSec(engine) {
+  const data = avgTimes[engine];
+  if (!data || data.count === 0) return null;
+  return (data.sum / data.count / 1000).toFixed(1);
+}
+
+function addTimeRecord(engine, durationMs) {
+  if (!avgTimes[engine]) avgTimes[engine] = { sum: 0, count: 0 };
+  avgTimes[engine].sum += durationMs;
+  avgTimes[engine].count += 1;
+  localStorage.setItem("dezleks_avg_times", JSON.stringify(avgTimes));
+}
+
+function startRecognitionTimer(engine) {
+  const startTime = Date.now();
+  const avgSec = getAvgTimeSec(engine);
+  let currentPrefixKey = "status.recognizingTimer";
+  
+  const update = () => {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    let text = t(currentPrefixKey, { time: elapsed });
+    if (avgSec) {
+      text += ` ` + t("status.recognizingAvg", { avg: avgSec });
+    }
+    setStatus(text);
+    if (ui.busyText) ui.busyText.textContent = text;
+  };
+  
+  update();
+  const timerId = setInterval(update, 100);
+  
+  let stopped = false;
+  return {
+    setPrefix: (key) => {
+      currentPrefixKey = key;
+      update();
+    },
+    stop: () => {
+      if (stopped) return;
+      stopped = true;
+      clearInterval(timerId);
+      const durationMs = Date.now() - startTime;
+      addTimeRecord(engine, durationMs);
+    }
+  };
+}
+
 async function recognize() {
   if (!state.workingImage) {
     setStatus(t("errors.pickPhotoFirst"));
@@ -964,7 +1025,7 @@ async function recognize() {
 
   setStatus(t("status.recognizing"));
   setBusy(true, t("status.recognizing"));
-  await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 
   if (!state.roi) {
     const nw = ui.imgPreview.naturalWidth || 0;
@@ -988,22 +1049,21 @@ async function recognize() {
   }
 
   ui.btnRecognize.disabled = true;
+  
+  const engineToUse = state.settings.engine;
+  const shouldClean = state.settings.aiClean || engineToUse === "gemma";
+  const timerEngineKey = shouldClean ? `${engineToUse}_clean` : engineToUse;
+  const timer = startRecognitionTimer(timerEngineKey);
 
   try {
-    const engineToUse = state.settings.engine;
     const modelPath = state.settings.modelPath?.trim() || "";
     if (engineToUse === "gemma") {
       if (!modelPath) {
+        timer.stop();
         setStatus(t("errors.modelPathRequiredForGemmaOcr"));
         return;
       }
-      setStatus(t("status.preparingGemmaOcr"));
-      setBusy(true, t("status.preparingGemmaOcr"));
-      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
       await bridge.invoke("ensure_gemma_ocr_runtime");
-      setStatus(t("status.recognizingGemma"));
-      setBusy(true, t("status.recognizingGemma"));
-      await new Promise((resolve) => requestAnimationFrame(() => resolve()));
     }
 
     const result = await bridge.invoke("ocr", {
@@ -1015,6 +1075,7 @@ async function recognize() {
     });
     state.rawText = result?.rawText || "";
     if (!state.rawText.trim()) {
+      timer.stop();
       setStatus(t("errors.emptyResultTryOther"));
       return;
     }
@@ -1022,12 +1083,13 @@ async function recognize() {
     ui.textSettings.classList.add("settings--hidden");
     showScreen("result");
 
-    const shouldClean = state.settings.aiClean || engineToUse === "gemma";
     if (shouldClean) {
       const ok = await ensureLiteRtLm(bridge);
-      if (!ok) return;
-      setStatus(t("status.cleaning"));
-      setBusy(true, t("status.cleaning"));
+      if (!ok) {
+        timer.stop();
+        return;
+      }
+      timer.setPrefix("status.cleaningTimer");
       try {
         const promptOverride = (state.settings.aiPrompt || "").trim();
         const cleaned = await bridge.invoke("clean_text_gemma", {
@@ -1051,6 +1113,7 @@ async function recognize() {
   } catch (e) {
     setStatus(formatNativeError(e));
   } finally {
+    timer.stop();
     setBusy(false);
     ui.btnRecognize.disabled = false;
   }
@@ -1067,9 +1130,12 @@ async function cleanWithGemma() {
     return;
   }
 
-  setStatus(t("status.cleaning"));
   setBusy(true, t("status.cleaning"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
   ui.btnClean.disabled = true;
+  
+  const timer = startRecognitionTimer("manual_clean");
+  timer.setPrefix("status.cleaningTimer");
 
   try {
     const ok = await ensureLiteRtLm(bridge);
@@ -1087,6 +1153,7 @@ async function cleanWithGemma() {
     const msg = String(e?.message || e || "");
     setStatus(formatNativeError(msg));
   } finally {
+    timer.stop();
     setBusy(false);
     ui.btnClean.disabled = false;
   }
