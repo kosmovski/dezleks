@@ -25,6 +25,9 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.LogSeverity
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.googlecode.tesseract.android.TessBaseAPI
 import java.io.File
 import java.io.IOException
@@ -290,6 +293,49 @@ class DezleksNativePlugin(private val activity: Activity) : Plugin(activity) {
     }.start()
   }
 
+  @Command
+  fun mlkitOcr(invoke: Invoke) {
+    val args = invoke.getArgs()
+    val imageBase64 = args.getString("imageBase64") ?: ""
+    if (imageBase64.isBlank()) {
+      invoke.reject("imageBase64 is required")
+      return
+    }
+
+    Thread {
+      try {
+        val bytes = decodeBase64(imageBase64)
+        val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        if (bmp == null) {
+          invoke.reject("failed to decode image")
+          return@Thread
+        }
+
+        val image = InputImage.fromBitmap(bmp, 0)
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        recognizer
+          .process(image)
+          .addOnSuccessListener { res ->
+            try {
+              val out = JSObject().apply { put("text", res.text ?: "") }
+              invoke.resolve(out)
+            } finally {
+              bmp.recycle()
+            }
+          }
+          .addOnFailureListener { e ->
+            try {
+              invoke.reject(e.message ?: "mlkitOcr failed")
+            } finally {
+              bmp.recycle()
+            }
+          }
+      } catch (e: Exception) {
+        invoke.reject(e.message ?: "mlkitOcr failed", e, null)
+      }
+    }.start()
+  }
+
   private fun getEngine(modelPath: String): Engine {
     val existing = engine
     if (existing != null && engineModelPath == modelPath) return existing
@@ -346,77 +392,82 @@ class DezleksNativePlugin(private val activity: Activity) : Plugin(activity) {
 
   @Command
   fun gemmaOcr(invoke: Invoke) {
-    try {
-      val args = invoke.getArgs()
-      val modelPath = args.getString("modelPath") ?: ""
-      val imageBase64 = args.getString("imageBase64") ?: ""
-      val prompt = args.getString("prompt") ?: ""
-      if (modelPath.isBlank()) {
-        invoke.reject("modelPath is required")
-        return
-      }
-      if (imageBase64.isBlank()) {
-        invoke.reject("imageBase64 is required")
-        return
-      }
-
-      val eng = getEngine(modelPath)
-      eng.createConversation(ConversationConfig()).use { conv ->
-        val parts = ArrayList<Content>()
-        parts.add(Content.ImageBytes(decodeBase64(imageBase64)))
-        parts.add(Content.Text(prompt))
-        val contents = Contents.Companion.of(parts)
-        val msg = conv.sendMessage(contents, Collections.emptyMap())
-        val text = messageToText(msg)
-        val out = JSObject().apply { put("text", text) }
-        invoke.resolve(out)
-      }
-    } catch (e: OutOfMemoryError) {
-      try {
-        engine?.close()
-      } catch (_: Exception) {
-      }
-      engine = null
-      engineModelPath = null
-      invoke.reject(
-        "Gemma OCR не вдався через нестачу пам'яті. Зменште область (ROI) або масштаб зображення та спробуйте ще раз."
-      )
-    } catch (e: Exception) {
-      invoke.reject(e.message ?: "gemmaOcr failed", e, null)
+    val args = invoke.getArgs()
+    val modelPath = args.getString("modelPath") ?: ""
+    val imageBase64 = args.getString("imageBase64") ?: ""
+    val prompt = args.getString("prompt") ?: ""
+    if (modelPath.isBlank()) {
+      invoke.reject("modelPath is required")
+      return
     }
+    if (imageBase64.isBlank()) {
+      invoke.reject("imageBase64 is required")
+      return
+    }
+
+    Thread {
+      try {
+        val eng = getEngine(modelPath)
+        eng.createConversation(ConversationConfig()).use { conv ->
+          val parts = ArrayList<Content>()
+          parts.add(Content.ImageBytes(decodeBase64(imageBase64)))
+          parts.add(Content.Text(prompt))
+          val contents = Contents.Companion.of(parts)
+          val msg = conv.sendMessage(contents, Collections.emptyMap())
+          val text = messageToText(msg)
+          val out = JSObject().apply { put("text", text) }
+          invoke.resolve(out)
+        }
+      } catch (e: OutOfMemoryError) {
+        try {
+          engine?.close()
+        } catch (_: Exception) {
+        }
+        engine = null
+        engineModelPath = null
+        invoke.reject(
+          "Gemma OCR не вдався через нестачу пам'яті. Зменште область (ROI) або масштаб зображення та спробуйте ще раз."
+        )
+      } catch (e: Exception) {
+        invoke.reject(e.message ?: "gemmaOcr failed", e, null)
+      }
+    }.start()
   }
 
   @Command
   fun cleanText(invoke: Invoke) {
-    try {
-      val args = invoke.getArgs()
-      val modelPath = args.getString("modelPath") ?: ""
-      val rawText = args.getString("rawText") ?: ""
-      val prompt = args.getString("prompt") ?: ""
-      if (modelPath.isBlank()) {
-        invoke.reject("modelPath is required")
-        return
-      }
-      val eng = getEngine(modelPath)
-      eng.createConversation(ConversationConfig()).use { conv ->
-        val parts = ArrayList<Content>()
-        parts.add(Content.Text(prompt.ifBlank { rawText }))
-        val contents = Contents.Companion.of(parts)
-        val msg = conv.sendMessage(contents, Collections.emptyMap())
-        val text = messageToText(msg)
-        val out = JSObject().apply { put("text", text) }
-        invoke.resolve(out)
-      }
-    } catch (e: OutOfMemoryError) {
-      try {
-        engine?.close()
-      } catch (_: Exception) {
-      }
-      engine = null
-      engineModelPath = null
-      invoke.reject("cleanText не вдався через нестачу пам'яті. Спробуйте ще раз.")
-    } catch (e: Exception) {
-      invoke.reject(e.message ?: "cleanText failed", e, null)
+    val args = invoke.getArgs()
+    val modelPath = args.getString("modelPath") ?: ""
+    val rawText = args.getString("rawText") ?: ""
+    val prompt = args.getString("prompt") ?: ""
+    if (modelPath.isBlank()) {
+      invoke.reject("modelPath is required")
+      return
     }
+
+    Thread {
+      try {
+        val eng = getEngine(modelPath)
+        eng.createConversation(ConversationConfig()).use { conv ->
+          val parts = ArrayList<Content>()
+          parts.add(Content.Text(prompt.ifBlank { rawText }))
+          val contents = Contents.Companion.of(parts)
+          val msg = conv.sendMessage(contents, Collections.emptyMap())
+          val text = messageToText(msg)
+          val out = JSObject().apply { put("text", text) }
+          invoke.resolve(out)
+        }
+      } catch (e: OutOfMemoryError) {
+        try {
+          engine?.close()
+        } catch (_: Exception) {
+        }
+        engine = null
+        engineModelPath = null
+        invoke.reject("cleanText не вдався через нестачу пам'яті. Спробуйте ще раз.")
+      } catch (e: Exception) {
+        invoke.reject(e.message ?: "cleanText failed", e, null)
+      }
+    }.start()
   }
 }
