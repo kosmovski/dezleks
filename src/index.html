@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dezleks</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <button id="btnBack" class="btn btn--secondary header__back">Назад</button>
+      <div class="header__center">
+        <div class="header__title">Dezleks</div>
+        <div id="statusText" class="header__status">Готово</div>
+      </div>
+      <div class="header__actions">
+        <button id="btnGoSettings" class="btn btn--secondary">Налаштування</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section id="screenHome" class="screen screen--active" aria-label="Стартовий екран">
+        <div class="panel panel--center">
+          <div class="sectionTitle">Старт</div>
+          <div class="hint">Оберіть або зробіть фото з текстом. Далі можна виправити перспективу і виділити область для OCR.</div>
+
+          <div class="actionsGrid">
+            <button id="btnPickPhoto" class="btn btn--primary">Обрати фото</button>
+            <button id="btnTakePhoto" class="btn">Зробити фото</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screenSettings" class="screen" aria-label="Налаштування">
+        <div class="panel">
+          <div class="sectionTitle">Налаштування</div>
+
+          <div class="settings settings--three">
+            <div class="settings__group">
+              <label class="label" for="selectEngine">Двигун OCR</label>
+              <select id="selectEngine" class="select">
+                <option value="tesseract" selected>Tesseract</option>
+                <option value="gemma">Gemma</option>
+              </select>
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="selectLang">Мови OCR</label>
+              <select id="selectLang" class="select">
+                <option value="ukr+eng" selected>ukr+eng</option>
+                <option value="ukr">ukr</option>
+                <option value="eng">eng</option>
+              </select>
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="toggleAutoCorrect">Корекція при старті</label>
+              <button id="toggleAutoCorrect" class="btn btn--secondary">Увімкнено</button>
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="toggleAiClean">Очищення нейромережею</label>
+              <button id="toggleAiClean" class="btn btn--secondary">Увімкнено</button>
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <label class="label" for="inputAiPrompt">Промпт для очищення (Gemma)</label>
+              <textarea id="inputAiPrompt" class="input" rows="6" placeholder="Порожньо — стандартний промпт."></textarea>
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <label class="label" for="inputModelPath">Шлях до моделі (Gemma)</label>
+              <input id="inputModelPath" class="input" type="text" placeholder="/path/to/model.task або .litertlm" />
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <label class="label" for="inputModelUrl">Посилання для завантаження моделі</label>
+              <input id="inputModelUrl" class="input" type="text" placeholder="https://..." />
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <div class="row">
+                <button id="btnDownloadE2B" class="btn btn--secondary">Завантажити Gemma 4 E2B</button>
+                <button id="btnDownloadE4B" class="btn btn--secondary">Завантажити Gemma 4 E4B</button>
+              </div>
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <label class="label" for="inputModelToken">Токен доступу (не зберігається)</label>
+              <input id="inputModelToken" class="input" type="password" placeholder="Hugging Face token / Bearer token" />
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <button id="btnDownloadModel" class="btn btn--secondary">Завантажити модель</button>
+              <div id="modelDownloadStatus" class="hint"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="screenEdit" class="screen" aria-label="Фото та виділення області">
+        <section class="panel panel--left">
+          <div class="sectionTitle">Фото</div>
+          <div class="hint">
+            За потреби натисніть “Корекція перспективи”, відрегулюйте 4 точки, застосуйте. Потім виділіть область тексту.
+          </div>
+
+          <div class="toolbar">
+            <button id="btnToggleWarp" class="btn btn--secondary">Корекція перспективи</button>
+            <button id="btnApplyWarp" class="btn btn--secondary">Застосувати</button>
+            <button id="btnRotateLeft" class="btn btn--secondary">⟲ 90°</button>
+            <button id="btnRotateRight" class="btn btn--secondary">⟳ 90°</button>
+            <button id="btnRecognize" class="btn btn--primary">Розпізнати</button>
+          </div>
+
+          <div id="imageStage" class="imageStage" aria-label="Зона фото">
+            <img id="imgPreview" class="imageStage__img" alt="Фото" />
+            <svg id="quadSvg" class="imageStage__svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polygon id="quadPoly" points="" />
+            </svg>
+            <div id="roiOverlay" class="imageStage__overlay" aria-label="Оверлей"></div>
+          </div>
+
+          <div class="row">
+            <div class="kv">
+              <div class="kv__k">ROI</div>
+              <div id="roiText" class="kv__v">—</div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="screenResult" class="screen" aria-label="Розпізнаний текст">
+        <section class="panel panel--right">
+          <div class="resultHeader">
+            <div class="sectionTitle">Результат</div>
+            <div class="resultHeader__actions">
+              <button id="btnToggleTextSettings" class="btn btn--secondary">Налаштування вигляду</button>
+              <button id="btnClean" class="btn btn--secondary">Очистити (Gemma)</button>
+            </div>
+          </div>
+
+          <div id="textSettings" class="settings settings--hidden">
+            <div class="settings__group">
+              <label class="label" for="fontFamily">Шрифт</label>
+              <select id="fontFamily" class="select">
+                <option value="OpenDyslexic-Regular" selected>OpenDyslexic Regular</option>
+                <option value="OpenDyslexic-Bold">OpenDyslexic Bold</option>
+                <option value="OpenDyslexic-Italic">OpenDyslexic Italic</option>
+                <option value="OpenDyslexic-BoldItalic">OpenDyslexic BoldItalic</option>
+                <option value="system">Системний</option>
+              </select>
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="fontSize">Розмір</label>
+              <input id="fontSize" class="input" type="number" min="12" max="64" step="1" />
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="lineHeight">Міжряддя</label>
+              <input id="lineHeight" class="input" type="number" min="1.2" max="2.4" step="0.05" />
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="bgColor">Фон</label>
+              <input id="bgColor" class="input input--color" type="color" />
+            </div>
+
+            <div class="settings__group">
+              <label class="label" for="textColor">Текст</label>
+              <input id="textColor" class="input input--color" type="color" />
+            </div>
+          </div>
+
+          <div id="output" class="output" aria-label="Текст"></div>
+        </section>
+      </section>
+
+      <input id="fileInput" type="file" accept="image/*" class="hidden" />
+      <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
+    </main>
+
+    <div id="busyOverlay" class="busyOverlay hidden" aria-hidden="true">
+      <div class="busyOverlay__card" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <div id="busyText" class="busyOverlay__text">Обробка…</div>
+      </div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

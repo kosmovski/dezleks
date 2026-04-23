@@ -1,0 +1,16 @@
+{
+  "name": "dezleks",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "dev": "LLVM_PROFILE_FILE=\"/tmp/dezleks-%p.profraw\" PATH=\"$HOME/.cargo/bin:$PATH\" tauri dev",
+    "build": "PATH=\"$HOME/.cargo/bin:$PATH\" tauri build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.10.1"
+  }
+}
