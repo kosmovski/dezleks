@@ -140,22 +140,13 @@ body {
   display: flex;
   gap: 12px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   position: sticky;
   top: 0;
   z-index: 10;
-}
-
-.header__back {
-  min-width: 84px;
-}
-
-.header__title {
-  font-weight: 700;
-  letter-spacing: 0.3px;
 }
 
 .header__center {
@@ -165,20 +156,57 @@ body {
   align-items: center;
 }
 
+.header__title {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
 .header__status {
   font-size: 12px;
   opacity: 0.85;
 }
 
-.header__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: flex-end;
+.shell {
+  height: calc(100% - 128px); /* Adjusted for header and bottom nav */
+  overflow-y: auto;
 }
 
-.shell {
-  height: calc(100% - 64px);
+.bottomNav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.bottomNav__btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  transition: color 0.2s, background 0.2s;
+}
+
+.bottomNav__btn:active {
+  background: var(--btn-bg);
+  color: var(--text);
+}
+
+.bottomNav__btn svg {
+  width: 24px;
+  height: 24px;
 }
 
 .screen {

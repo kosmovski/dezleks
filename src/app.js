@@ -416,6 +416,13 @@ function showScreen(name, { push = true } = {}) {
   if (push) state.nav.push(name);
   ui.btnBack.style.visibility = state.nav.length > 1 ? "visible" : "hidden";
   ui.btnGoSettings.style.visibility = name === "settings" ? "hidden" : "visible";
+  
+  // Update bottom nav active state
+  if (name === "settings") {
+    ui.btnGoSettings.style.color = "var(--accent)";
+  } else {
+    ui.btnGoSettings.style.color = "var(--muted)";
+  }
 }
 
 function goBack() {
@@ -1031,6 +1038,14 @@ function startRecognitionTimer(engine) {
       clearInterval(timerId);
       const durationMs = Date.now() - startTime;
       addTimeRecord(engine, durationMs);
+      
+      // Show final time
+      const finalElapsed = (durationMs / 1000).toFixed(1);
+      let text = t(currentPrefixKey, { time: finalElapsed });
+      if (avgSec) {
+        text += ` ` + t("status.recognizingAvg", { avg: avgSec });
+      }
+      setStatus(text);
     }
   };
 }
