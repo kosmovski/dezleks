@@ -99,6 +99,14 @@ struct AndroidEmptyRequest {}
 #[derive(Debug, Serialize)]
 struct AndroidPrintTextRequest {
     text: String,
+    #[serde(rename = "fontFamily")]
+    font_family: String,
+    #[serde(rename = "fontSizePx")]
+    font_size_px: u32,
+    #[serde(rename = "lineHeight")]
+    line_height: f64,
+    #[serde(rename = "textColor")]
+    text_color: String,
 }
 
 #[cfg(target_os = "android")]
@@ -1483,6 +1491,11 @@ async fn download_model(
 async fn print_text(
     mobile: tauri::State<'_, DezleksMobilePlugin>,
     raw_text: String,
+    font_family: Option<String>,
+    font_size_px: Option<u32>,
+    line_height: Option<f64>,
+    text_color: Option<String>,
+    background: Option<String>,
 ) -> Result<String, String> {
     #[cfg(target_os = "android")]
     {
@@ -1490,11 +1503,22 @@ async fn print_text(
         if text.is_empty() {
             return Err("Немає тексту для друку".to_string());
         }
+        let _ = background;
+        let font_family = font_family.unwrap_or_else(|| "system".to_string());
+        let font_size_px = font_size_px.unwrap_or(20);
+        let line_height = line_height.unwrap_or(1.6);
+        let text_color = text_color.unwrap_or_else(|| "#1a1a1a".to_string());
         let _ = mobile
             .0
             .run_mobile_plugin::<AndroidOkResponse>(
                 "printText",
-                AndroidPrintTextRequest { text },
+                AndroidPrintTextRequest {
+                    text,
+                    font_family,
+                    font_size_px,
+                    line_height,
+                    text_color,
+                },
             )
             .map_err(|e| format!("Не вдалося відкрити друк: {e}"))?;
         return Ok("ok".to_string());
@@ -1504,6 +1528,11 @@ async fn print_text(
     {
         let _ = mobile;
         let _ = raw_text;
+        let _ = font_family;
+        let _ = font_size_px;
+        let _ = line_height;
+        let _ = text_color;
+        let _ = background;
         Err("Друк підтримується лише на Android".to_string())
     }
 }

@@ -1284,7 +1284,14 @@ async function printWithAndroid() {
   if (ui.btnPrint) ui.btnPrint.disabled = true;
 
   try {
-    await bridge.invoke("print_text", { rawText: state.rawText });
+    await bridge.invoke("print_text", {
+      rawText: state.rawText,
+      fontFamily: state.readingStyle.fontFamily,
+      fontSizePx: state.readingStyle.fontSizePx,
+      lineHeight: state.readingStyle.lineHeight,
+      textColor: state.readingStyle.textColor,
+      background: state.readingStyle.background,
+    });
     setStatus(t("status.ready"));
   } catch (e) {
     const msg = String(e?.message || e || "");

@@ -3,14 +3,25 @@ package com.dezleks.reader
 import android.app.Activity
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.graphics.pdf.PdfDocument
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Environment
+import android.os.CancellationSignal
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.util.Base64
-import android.webkit.WebView
 import android.print.PrintAttributes
 import android.print.PrintManager
+import android.print.PrintDocumentAdapter
+import android.print.PrintDocumentInfo
+import android.print.pdf.PrintedPdfDocument
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import androidx.activity.result.ActivityResult
 import androidx.core.content.FileProvider
 import app.tauri.PermissionHelper
@@ -70,31 +81,136 @@ class DezleksNativePlugin(private val activity: Activity) : Plugin(activity) {
       return
     }
 
+    val fontFamily = args.optString("fontFamily", "system")
+    val fontSizePx = args.optDouble("fontSizePx", 20.0).toFloat().coerceAtLeast(8f)
+    val lineHeightMult = args.optDouble("lineHeight", 1.6).toFloat().coerceAtLeast(1.0f)
+    val textColorRaw = args.optString("textColor", "#1a1a1a")
+
+    fun safeParseColor(s: String, fallback: Int): Int {
+      return try {
+        Color.parseColor(s.trim())
+      } catch (_: Throwable) {
+        fallback
+      }
+    }
+
+    val textColor = safeParseColor(textColorRaw, Color.parseColor("#1a1a1a"))
+
+    fun loadTypeface(): Typeface? {
+      if (fontFamily == "system") return null
+      if (fontFamily.startsWith("OpenDyslexic-")) {
+        val fontFile = "fonts/$fontFamily.otf"
+        return try {
+          Typeface.createFromAsset(activity.assets, fontFile)
+        } catch (_: Throwable) {
+          null
+        }
+      }
+      return null
+    }
+
+    val loadedTypeface = loadTypeface()
+
     activity.runOnUiThread {
       try {
         val pm = activity.getSystemService(Activity.PRINT_SERVICE) as PrintManager
         val jobName = "Dezleks"
 
-        val webView = WebView(activity)
-        val html = """
-          <html>
-            <head>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-              <style>
-                body { font-family: sans-serif; padding: 12px; }
-                pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12pt; line-height: 1.4; }
-              </style>
-            </head>
-            <body>
-              <pre>${escapeHtml(text)}</pre>
-            </body>
-          </html>
-        """.trimIndent()
-        webView.loadDataWithBaseURL(null, html, "text/HTML", "UTF-8", null)
+        val adapter = object : PrintDocumentAdapter() {
+          private var printAttrs: PrintAttributes? = null
 
-        val adapter = webView.createPrintDocumentAdapter(jobName)
+          override fun onLayout(
+            oldAttributes: PrintAttributes?,
+            newAttributes: PrintAttributes?,
+            cancellationSignal: CancellationSignal?,
+            callback: LayoutResultCallback?,
+            extras: android.os.Bundle?
+          ) {
+            if (cancellationSignal?.isCanceled == true) {
+              callback?.onLayoutCancelled()
+              return
+            }
+            printAttrs = newAttributes
+            val info = PrintDocumentInfo.Builder("dezleks-text.pdf")
+              .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+              .build()
+            callback?.onLayoutFinished(info, true)
+          }
+
+          override fun onWrite(
+            pages: Array<out android.print.PageRange>?,
+            destination: ParcelFileDescriptor?,
+            cancellationSignal: CancellationSignal?,
+            callback: WriteResultCallback?
+          ) {
+            if (destination == null) {
+              callback?.onWriteFailed("No destination")
+              return
+            }
+            val attrs = printAttrs ?: PrintAttributes.Builder().build()
+            val pdf = PrintedPdfDocument(activity, attrs)
+            try {
+              val pageWidth = pdf.pageWidth
+              val pageHeight = pdf.pageHeight
+              val margin = 36f
+              val contentWidth = (pageWidth - (margin * 2)).toInt().coerceAtLeast(1)
+              val contentHeight = (pageHeight - (margin * 2)).toInt().coerceAtLeast(1)
+
+              val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = textColor
+                textSize = fontSizePx
+                if (loadedTypeface != null) typeface = loadedTypeface
+              }
+
+              val layout = StaticLayout.Builder
+                .obtain(text, 0, text.length, paint, contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                .setLineSpacing(0f, lineHeightMult)
+                .setIncludePad(false)
+                .build()
+
+              val totalHeight = layout.height
+              val pageCount = ((totalHeight + contentHeight - 1) / contentHeight).coerceAtLeast(1)
+
+              for (i in 0 until pageCount) {
+                if (cancellationSignal?.isCanceled == true) {
+                  callback?.onWriteCancelled()
+                  return
+                }
+                val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, i + 1).create()
+                val page = pdf.startPage(pageInfo)
+                val canvas = page.canvas
+
+                canvas.drawColor(Color.WHITE)
+
+                val yOffset = i * contentHeight
+                canvas.save()
+                canvas.translate(margin, margin - yOffset.toFloat())
+                canvas.clipRect(0f, yOffset.toFloat(), contentWidth.toFloat(), (yOffset + contentHeight).toFloat())
+                layout.draw(canvas)
+                canvas.restore()
+
+                pdf.finishPage(page)
+              }
+
+              android.os.ParcelFileDescriptor.AutoCloseOutputStream(destination).use { out ->
+                pdf.writeTo(out)
+              }
+
+              callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+            } catch (e: Exception) {
+              callback?.onWriteFailed(e.message ?: "write failed")
+            } finally {
+              pdf.close()
+              try {
+                destination.close()
+              } catch (_: Throwable) {
+              }
+            }
+          }
+        }
+
         pm.print(jobName, adapter, PrintAttributes.Builder().build())
-
         val out = JSObject().apply { put("ok", true) }
         invoke.resolve(out)
       } catch (e: Exception) {
