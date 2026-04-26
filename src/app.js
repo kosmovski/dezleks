@@ -11,6 +11,7 @@ const ui = {
   btnToggleTextSettings: document.getElementById("btnToggleTextSettings"),
   btnClean: document.getElementById("btnClean"),
   btnExplain: document.getElementById("btnExplain"),
+  btnPrint: document.getElementById("btnPrint"),
   toggleAutoCorrect: document.getElementById("toggleAutoCorrect"),
   toggleAiClean: document.getElementById("toggleAiClean"),
   inputAiPrompt: document.getElementById("inputAiPrompt"),
@@ -140,6 +141,7 @@ const i18n = {
     "result.title": "Результат",
     "result.viewSettings": "Налаштування вигляду",
     "result.explain": "Пояснити (Gemma)",
+    "result.print": "Друк",
     "result.clean": "Очистити (Gemma)",
     "result.font": "Шрифт",
     "result.systemFont": "Системний",
@@ -177,6 +179,7 @@ const i18n = {
     "errors.ocrDoneCleanFailed": "OCR готово. Очищення не вдалося: {msg}",
     "errors.noTextToClean": "Немає тексту для очищення",
     "errors.noTextToExplain": "Немає тексту для пояснення",
+    "errors.noTextToPrint": "Немає тексту для друку",
     "status.openingCamera": "Відкриваю камеру…",
     "errors.openCameraFailed": "Не вдалося відкрити камеру",
     "status.rotating": "Поворот…",
@@ -247,6 +250,7 @@ const i18n = {
     "result.title": "Result",
     "result.viewSettings": "Reading settings",
     "result.explain": "Explain (Gemma)",
+    "result.print": "Print",
     "result.clean": "Clean up (Gemma)",
     "result.font": "Font",
     "result.systemFont": "System",
@@ -284,6 +288,7 @@ const i18n = {
     "errors.ocrDoneCleanFailed": "OCR done. Cleanup failed: {msg}",
     "errors.noTextToClean": "No text to clean",
     "errors.noTextToExplain": "No text to explain",
+    "errors.noTextToPrint": "No text to print",
     "status.openingCamera": "Opening camera…",
     "errors.openCameraFailed": "Failed to open camera",
     "status.rotating": "Rotating…",
@@ -1263,6 +1268,33 @@ async function explainWithGemma() {
   }
 }
 
+async function printWithAndroid() {
+  const bridge = getBridge();
+  if (!bridge) {
+    setStatus(t("errors.noBridge"));
+    return;
+  }
+  if (!state.rawText.trim()) {
+    setStatus(t("errors.noTextToPrint"));
+    return;
+  }
+
+  setBusy(true, t("common.processing"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  if (ui.btnPrint) ui.btnPrint.disabled = true;
+
+  try {
+    await bridge.invoke("print_text", { rawText: state.rawText });
+    setStatus(t("status.ready"));
+  } catch (e) {
+    const msg = String(e?.message || e || "");
+    setStatus(formatNativeError(msg));
+  } finally {
+    setBusy(false);
+    if (ui.btnPrint) ui.btnPrint.disabled = false;
+  }
+}
+
 function wireUi() {
   ui.btnBack.addEventListener("click", goBack);
   ui.btnGoSettings.addEventListener("click", () => showScreen("settings"));
@@ -1379,6 +1411,7 @@ function wireUi() {
     ui.textSettings.classList.toggle("settings--hidden");
   });
   if (ui.btnExplain) ui.btnExplain.addEventListener("click", explainWithGemma);
+  if (ui.btnPrint) ui.btnPrint.addEventListener("click", printWithAndroid);
   ui.btnClean.addEventListener("click", cleanWithGemma);
 
   ui.fontFamily.addEventListener("change", () => {

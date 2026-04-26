@@ -96,6 +96,12 @@ struct AndroidOkResponse {
 struct AndroidEmptyRequest {}
 
 #[cfg(target_os = "android")]
+#[derive(Debug, Serialize)]
+struct AndroidPrintTextRequest {
+    text: String,
+}
+
+#[cfg(target_os = "android")]
 #[derive(Debug, Deserialize)]
 struct AndroidTakePhotoResponse {
     #[serde(rename = "imageBase64")]
@@ -1473,6 +1479,35 @@ async fn download_model(
     })
 }
 
+#[tauri::command(rename_all = "camelCase")]
+async fn print_text(
+    mobile: tauri::State<'_, DezleksMobilePlugin>,
+    raw_text: String,
+) -> Result<String, String> {
+    #[cfg(target_os = "android")]
+    {
+        let text = raw_text.trim().to_string();
+        if text.is_empty() {
+            return Err("Немає тексту для друку".to_string());
+        }
+        let _ = mobile
+            .0
+            .run_mobile_plugin::<AndroidOkResponse>(
+                "printText",
+                AndroidPrintTextRequest { text },
+            )
+            .map_err(|e| format!("Не вдалося відкрити друк: {e}"))?;
+        return Ok("ok".to_string());
+    }
+
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = mobile;
+        let _ = raw_text;
+        Err("Друк підтримується лише на Android".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1497,7 +1532,8 @@ pub fn run() {
             warmup_gemma,
             ensure_litert_lm,
             ensure_gemma_ocr_runtime,
-            download_model
+            download_model,
+            print_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -8,6 +8,9 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
+import android.webkit.WebView
+import android.print.PrintAttributes
+import android.print.PrintManager
 import androidx.activity.result.ActivityResult
 import androidx.core.content.FileProvider
 import app.tauri.PermissionHelper
@@ -42,6 +45,63 @@ class DezleksNativePlugin(private val activity: Activity) : Plugin(activity) {
   private var engine: Engine? = null
   private var engineModelPath: String? = null
   private var pendingTakePhotoUri: Uri? = null
+
+  private fun escapeHtml(s: String): String {
+    val out = StringBuilder(s.length + 16)
+    for (ch in s) {
+      when (ch) {
+        '&' -> out.append("&amp;")
+        '<' -> out.append("&lt;")
+        '>' -> out.append("&gt;")
+        '"' -> out.append("&quot;")
+        '\'' -> out.append("&#39;")
+        else -> out.append(ch)
+      }
+    }
+    return out.toString()
+  }
+
+  @Command
+  fun printText(invoke: Invoke) {
+    val args = invoke.getArgs()
+    val text = args.getString("text") ?: ""
+    if (text.isBlank()) {
+      invoke.reject("text is required")
+      return
+    }
+
+    activity.runOnUiThread {
+      try {
+        val pm = activity.getSystemService(Activity.PRINT_SERVICE) as PrintManager
+        val jobName = "Dezleks"
+
+        val webView = WebView(activity)
+        val html = """
+          <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <style>
+                body { font-family: sans-serif; padding: 12px; }
+                pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12pt; line-height: 1.4; }
+              </style>
+            </head>
+            <body>
+              <pre>${escapeHtml(text)}</pre>
+            </body>
+          </html>
+        """.trimIndent()
+        webView.loadDataWithBaseURL(null, html, "text/HTML", "UTF-8", null)
+
+        val adapter = webView.createPrintDocumentAdapter(jobName)
+        pm.print(jobName, adapter, PrintAttributes.Builder().build())
+
+        val out = JSObject().apply { put("ok", true) }
+        invoke.resolve(out)
+      } catch (e: Exception) {
+        invoke.reject(e.message ?: "printText failed", e, null)
+      }
+    }
+  }
 
   private fun decodeBase64(s: String): ByteArray {
     return Base64.decode(s, Base64.DEFAULT)
