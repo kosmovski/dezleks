@@ -16,13 +16,42 @@
 
     <main class="shell">
       <section id="screenHome" class="screen screen--active" aria-label="Стартовий екран">
-        <div class="panel panel--center">
-          <div class="sectionTitle" data-i18n="home.title">Старт</div>
-          <div class="hint" data-i18n="home.hint">Оберіть або зробіть фото з текстом. Далі можна виправити перспективу і виділити область для OCR.</div>
+        <div class="homeHero">
+          <div class="homeHero__logo" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+              <path d="M14 2v6h6"/>
+              <circle cx="11" cy="13" r="3"/>
+              <path d="m13.2 15.2 2.6 2.6"/>
+            </svg>
+          </div>
 
-          <div class="actionsGrid">
-            <button id="btnPickPhoto" class="btn btn--primary" data-i18n="home.pickPhoto">Обрати фото</button>
-            <button id="btnTakePhoto" class="btn" data-i18n="home.takePhoto">Зробити фото</button>
+          <div class="homeHero__title" data-i18n="home.title">Dezleks</div>
+          <div class="homeHero__subtitle" data-i18n="home.subtitle">
+            Для людей із дислексією: розпізнає текст і показує його шрифтом, що допомагає читати легше.
+          </div>
+
+          <div class="homeHero__actions">
+            <button id="btnTakePhoto" class="homeActionBtn homeActionBtn--primary">
+              <span class="homeActionBtn__icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </span>
+              <span class="homeActionBtn__text" data-i18n="home.takePhoto">Зробити фото</span>
+            </button>
+
+            <button id="btnPickPhoto" class="homeActionBtn">
+              <span class="homeActionBtn__icon" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <path d="m21 15-5-5L5 21"/>
+                </svg>
+              </span>
+              <span class="homeActionBtn__text" data-i18n="home.pickPhoto">Обрати фото</span>
+            </button>
           </div>
         </div>
       </section>
@@ -81,6 +110,11 @@
             <div class="settings__group settings__group--wide">
               <label class="label" for="inputAiPrompt" data-i18n="settings.cleanupPrompt">Промпт для очищення (Gemma)</label>
               <textarea id="inputAiPrompt" class="input" rows="6" data-i18n-placeholder="settings.cleanupPromptPlaceholder" placeholder="Порожньо — стандартний промпт."></textarea>
+            </div>
+
+            <div class="settings__group settings__group--wide">
+              <label class="label" for="inputExplainPrompt" data-i18n="settings.explainPrompt">Промпт для пояснення (Gemma)</label>
+              <textarea id="inputExplainPrompt" class="input" rows="6" data-i18n-placeholder="settings.explainPromptPlaceholder" placeholder="Порожньо — стандартний промпт."></textarea>
             </div>
 
             <div class="settings__group settings__group--wide">
@@ -151,6 +185,7 @@
             <div class="sectionTitle" data-i18n="result.title">Результат</div>
             <div class="resultHeader__actions">
               <button id="btnToggleTextSettings" class="btn btn--secondary" data-i18n="result.viewSettings">Налаштування вигляду</button>
+              <button id="btnExplain" class="btn btn--secondary" data-i18n="result.explain">Пояснити (Gemma)</button>
               <button id="btnClean" class="btn btn--secondary" data-i18n="result.clean">Очистити (Gemma)</button>
             </div>
           </div>
@@ -197,10 +232,20 @@
     </main>
 
     <nav class="bottomNav">
-      <button id="btnBack" class="btn btn--secondary bottomNav__btn" data-i18n="nav.back">
+      <button
+        id="btnBack"
+        class="btn btn--secondary bottomNav__btn"
+        data-i18n-aria-label="nav.back"
+        data-i18n-title="nav.back"
+      >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </button>
-      <button id="btnGoSettings" class="btn btn--secondary bottomNav__btn" data-i18n="nav.settings">
+      <button
+        id="btnGoSettings"
+        class="btn btn--secondary bottomNav__btn"
+        data-i18n-aria-label="nav.settings"
+        data-i18n-title="nav.settings"
+      >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
     </nav>

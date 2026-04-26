@@ -47,6 +47,13 @@ struct AndroidTesseractOcrRequest {
 
 #[cfg(target_os = "android")]
 #[derive(Debug, Serialize)]
+struct AndroidMlkitOcrRequest {
+    #[serde(rename = "imageBase64")]
+    image_base64: String,
+}
+
+#[cfg(target_os = "android")]
+#[derive(Debug, Serialize)]
 struct AndroidGemmaOcrRequest {
     #[serde(rename = "modelPath")]
     model_path: String,
@@ -218,7 +225,7 @@ fn downscale_for_preview(img: DynamicImage) -> DynamicImage {
 }
 
 #[tauri::command(rename_all = "camelCase")]
-fn rotate_image(image: ImagePayload, direction: String) -> Result<ProcessedImage, String> {
+async fn rotate_image(image: ImagePayload, direction: String) -> Result<ProcessedImage, String> {
     let bytes = decode_image_bytes(&image)?;
     let img = image::load_from_memory(&bytes).map_err(|e| format!("decode image error: {e}"))?;
 
@@ -444,8 +451,8 @@ fn normalize_image(image: ImagePayload) -> Result<ProcessedImage, String> {
     encode_png_base64(&img)
 }
 
-#[tauri::command]
-fn warp_perspective(image: ImagePayload, quad: Quad) -> Result<ProcessedImage, String> {
+#[tauri::command(rename_all = "camelCase")]
+async fn warp_perspective(image: ImagePayload, quad: Quad) -> Result<ProcessedImage, String> {
     let bytes = decode_image_bytes(&image)?;
     let img = image::load_from_memory(&bytes).map_err(|e| format!("decode image error: {e}"))?;
     let img = normalize_orientation(&bytes, img).to_rgba8();
@@ -485,7 +492,9 @@ fn warp_perspective(image: ImagePayload, quad: Quad) -> Result<ProcessedImage, S
 }
 
 #[tauri::command(rename_all = "camelCase")]
-fn take_photo(mobile: tauri::State<'_, DezleksMobilePlugin>) -> Result<PhotoPayload, String> {
+async fn take_photo(
+    mobile: tauri::State<'_, DezleksMobilePlugin>,
+) -> Result<PhotoPayload, String> {
     #[cfg(target_os = "android")]
     {
         let res = mobile
@@ -506,7 +515,7 @@ fn take_photo(mobile: tauri::State<'_, DezleksMobilePlugin>) -> Result<PhotoPayl
 }
 
 #[tauri::command(rename_all = "camelCase")]
-fn ocr(
+async fn ocr(
     app: tauri::AppHandle,
     mobile: tauri::State<'_, DezleksMobilePlugin>,
     image: ImagePayload,
@@ -515,7 +524,7 @@ fn ocr(
     engine: String,
     model_path: Option<String>,
 ) -> Result<OcrResult, String> {
-    if engine != "tesseract" && engine != "gemma" {
+    if engine != "tesseract" && engine != "gemma" && engine != "mlkit" {
         return Err("Невідомий двигун OCR".to_string());
     }
 
@@ -595,34 +604,55 @@ fn ocr(
 
     #[cfg(target_os = "macos")]
     {
-        let text = run_tesseract_on_macos(cropped, &lang)?;
-        Ok(OcrResult {
-            raw_text: text,
-            engine,
-        })
+        if engine == "mlkit" {
+            let _ = cropped;
+            let _ = lang;
+            Err("Google ML Kit OCR підтримується лише на Android".to_string())
+        } else {
+            let text = run_tesseract_on_macos(cropped, &lang)?;
+            Ok(OcrResult {
+                raw_text: text,
+                engine,
+            })
+        }
     }
 
     #[cfg(target_os = "android")]
     {
         let cropped_png = encode_png_base64(&cropped)?.bytes_base64;
-        let text = mobile
-            .0
-            .run_mobile_plugin::<AndroidTextResponse>(
-                "tesseractOcr",
-                AndroidTesseractOcrRequest {
-                    image_base64: cropped_png,
-                    lang,
-                },
-            )
-            .map_err(|e| format!("Tesseract OCR не вдався: {e}"))?
-            .text;
+        let text = if engine == "mlkit" {
+            mobile
+                .0
+                .run_mobile_plugin::<AndroidTextResponse>(
+                    "mlkitOcr",
+                    AndroidMlkitOcrRequest {
+                        image_base64: cropped_png,
+                    },
+                )
+                .map_err(|e| format!("ML Kit OCR не вдався: {e}"))?
+                .text
+        } else {
+            mobile
+                .0
+                .run_mobile_plugin::<AndroidTextResponse>(
+                    "tesseractOcr",
+                    AndroidTesseractOcrRequest {
+                        image_base64: cropped_png,
+                        lang,
+                    },
+                )
+                .map_err(|e| format!("Tesseract OCR не вдався: {e}"))?
+                .text
+        };
         Ok(OcrResult { raw_text: text, engine })
     }
 
     #[cfg(all(not(target_os = "macos"), not(target_os = "android")))]
     {
         let _ = cropped;
-        Err("Tesseract OCR зараз реалізовано лише для macOS та Android".to_string())
+        let _ = lang;
+        let _ = engine;
+        Err("OCR зараз реалізовано лише для macOS та Android".to_string())
     }
 }
 
@@ -1173,16 +1203,17 @@ fn try_install_litert_lm() -> Result<(), String> {
 }
 
 #[tauri::command(rename_all = "camelCase")]
-fn ensure_litert_lm() -> Result<String, String> {
+async fn ensure_litert_lm() -> Result<String, String> {
     #[cfg(target_os = "android")]
     {
         return Ok("ok".to_string());
     }
+
     ensure_litert_lm_internal()
 }
 
 #[tauri::command(rename_all = "camelCase")]
-fn warmup_gemma(
+async fn warmup_gemma(
     mobile: tauri::State<'_, DezleksMobilePlugin>,
     model_path: Option<String>,
 ) -> Result<String, String> {
@@ -1214,7 +1245,7 @@ fn warmup_gemma(
 }
 
 #[tauri::command(rename_all = "camelCase")]
-fn clean_text_gemma(
+async fn clean_text_gemma(
     mobile: tauri::State<'_, DezleksMobilePlugin>,
     raw_text: String,
     model_path: Option<String>,

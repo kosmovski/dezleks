@@ -10,9 +10,11 @@ const ui = {
   btnRecognize: document.getElementById("btnRecognize"),
   btnToggleTextSettings: document.getElementById("btnToggleTextSettings"),
   btnClean: document.getElementById("btnClean"),
+  btnExplain: document.getElementById("btnExplain"),
   toggleAutoCorrect: document.getElementById("toggleAutoCorrect"),
   toggleAiClean: document.getElementById("toggleAiClean"),
   inputAiPrompt: document.getElementById("inputAiPrompt"),
+  inputExplainPrompt: document.getElementById("inputExplainPrompt"),
   inputModelPath: document.getElementById("inputModelPath"),
   inputModelUrl: document.getElementById("inputModelUrl"),
   inputModelToken: document.getElementById("inputModelToken"),
@@ -73,6 +75,7 @@ const state = {
     autoCorrect: true,
     aiClean: true,
     aiPrompt: "",
+    explainPrompt: "",
     modelPath: "",
     modelUrl: "",
   },
@@ -93,7 +96,8 @@ const i18n = {
     "common.processing": "Обробка…",
     "common.on": "Увімкнено",
     "common.off": "Вимкнено",
-    "home.title": "Старт",
+    "home.title": "Dezleks",
+    "home.subtitle": "Для людей із дислексією: розпізнає текст і показує його шрифтом, що допомагає читати легше.",
     "home.hint": "Оберіть або зробіть фото з текстом. Далі можна виправити перспективу і виділити область для OCR.",
     "home.pickPhoto": "Обрати фото",
     "home.takePhoto": "Зробити фото",
@@ -115,6 +119,9 @@ const i18n = {
     "settings.aiCleanup": "Очищення нейромережею",
     "settings.cleanupPrompt": "Промпт для очищення (Gemma)",
     "settings.cleanupPromptPlaceholder": "Порожньо — стандартний промпт.",
+    "settings.explainPrompt": "Промпт для пояснення (Gemma)",
+    "settings.explainPromptPlaceholder": "Порожньо — стандартний промпт.",
+    "settings.explainPromptDefault": "Перетвори даний текст за наступними правилами: розясни його доступною мовою, як для дитини, не міняй мову тексту, не міняй зміст тексту",
     "settings.modelPath": "Шлях до моделі (Gemma)",
     "settings.modelPathPlaceholder": "/path/to/model.task або .litertlm",
     "settings.modelUrl": "Посилання для завантаження моделі",
@@ -132,6 +139,7 @@ const i18n = {
     "edit.photoAlt": "Фото",
     "result.title": "Результат",
     "result.viewSettings": "Налаштування вигляду",
+    "result.explain": "Пояснити (Gemma)",
     "result.clean": "Очистити (Gemma)",
     "result.font": "Шрифт",
     "result.systemFont": "Системний",
@@ -156,6 +164,8 @@ const i18n = {
     "status.recognizing": "Розпізнавання…",
     "status.recognizingTimer": "Розпізнавання... {time}с",
     "status.cleaningTimer": "Очищення... {time}с",
+    "status.explaining": "Пояснення…",
+    "status.explainingTimer": "Пояснення... {time}с",
     "status.recognizingAvg": "(середній: {avg}с)",
     "status.roiNotSelectedRecognizeAll": "Область не вибрано — розпізнаю все фото",
     "errors.selectRoiFirst": "Спочатку виділіть область",
@@ -166,6 +176,7 @@ const i18n = {
     "status.cleaning": "Очищення…",
     "errors.ocrDoneCleanFailed": "OCR готово. Очищення не вдалося: {msg}",
     "errors.noTextToClean": "Немає тексту для очищення",
+    "errors.noTextToExplain": "Немає тексту для пояснення",
     "status.openingCamera": "Відкриваю камеру…",
     "errors.openCameraFailed": "Не вдалося відкрити камеру",
     "status.rotating": "Поворот…",
@@ -192,7 +203,8 @@ const i18n = {
     "common.processing": "Working…",
     "common.on": "On",
     "common.off": "Off",
-    "home.title": "Start",
+    "home.title": "Dezleks",
+    "home.subtitle": "For people with dyslexia: recognizes text and displays it in a font that makes reading easier.",
     "home.hint": "Pick a photo with text or take a new one. Then you can fix perspective and select a region for OCR.",
     "home.pickPhoto": "Choose photo",
     "home.takePhoto": "Take photo",
@@ -214,6 +226,9 @@ const i18n = {
     "settings.aiCleanup": "AI cleanup",
     "settings.cleanupPrompt": "Cleanup prompt (Gemma)",
     "settings.cleanupPromptPlaceholder": "Empty = default prompt.",
+    "settings.explainPrompt": "Explanation prompt (Gemma)",
+    "settings.explainPromptPlaceholder": "Empty = default prompt.",
+    "settings.explainPromptDefault": "Transform the given text using these rules: explain it in simple language, as if for a child; do not change the language of the text; do not change the meaning of the text.",
     "settings.modelPath": "Model path (Gemma)",
     "settings.modelPathPlaceholder": "/path/to/model.task or .litertlm",
     "settings.modelUrl": "Model download URL",
@@ -231,6 +246,7 @@ const i18n = {
     "edit.photoAlt": "Photo",
     "result.title": "Result",
     "result.viewSettings": "Reading settings",
+    "result.explain": "Explain (Gemma)",
     "result.clean": "Clean up (Gemma)",
     "result.font": "Font",
     "result.systemFont": "System",
@@ -255,6 +271,8 @@ const i18n = {
     "status.recognizing": "Recognizing…",
     "status.recognizingTimer": "Recognizing... {time}s",
     "status.cleaningTimer": "Cleaning... {time}s",
+    "status.explaining": "Explaining…",
+    "status.explainingTimer": "Explaining... {time}s",
     "status.recognizingAvg": "(avg: {avg}s)",
     "status.roiNotSelectedRecognizeAll": "No region selected — recognizing the whole photo",
     "errors.selectRoiFirst": "Select a region first",
@@ -265,6 +283,7 @@ const i18n = {
     "status.cleaning": "Cleaning…",
     "errors.ocrDoneCleanFailed": "OCR done. Cleanup failed: {msg}",
     "errors.noTextToClean": "No text to clean",
+    "errors.noTextToExplain": "No text to explain",
     "status.openingCamera": "Opening camera…",
     "errors.openCameraFailed": "Failed to open camera",
     "status.rotating": "Rotating…",
@@ -368,6 +387,16 @@ function applyLanguage() {
     const key = el.getAttribute("data-i18n-alt");
     if (!key) return;
     el.setAttribute("alt", t(key));
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-title");
+    if (!key) return;
+    el.setAttribute("title", t(key));
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-aria-label");
+    if (!key) return;
+    el.setAttribute("aria-label", t(key));
   });
 }
 
@@ -502,6 +531,7 @@ function updateSettingsControls() {
   ui.toggleAutoCorrect.textContent = state.settings.autoCorrect ? t("common.on") : t("common.off");
   ui.toggleAiClean.textContent = state.settings.aiClean ? t("common.on") : t("common.off");
   if (ui.inputAiPrompt) ui.inputAiPrompt.value = state.settings.aiPrompt || "";
+  if (ui.inputExplainPrompt) ui.inputExplainPrompt.value = state.settings.explainPrompt || t("settings.explainPromptDefault");
   ui.inputModelPath.value = state.settings.modelPath || "";
   if (ui.inputModelUrl) ui.inputModelUrl.value = state.settings.modelUrl || "";
 
@@ -1192,6 +1222,47 @@ async function cleanWithGemma() {
   }
 }
 
+async function explainWithGemma() {
+  const bridge = getBridge();
+  if (!bridge) {
+    setStatus(t("errors.noBridge"));
+    return;
+  }
+  if (!state.rawText.trim()) {
+    setStatus(t("errors.noTextToExplain"));
+    return;
+  }
+
+  setBusy(true, t("status.explaining"));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  if (ui.btnExplain) ui.btnExplain.disabled = true;
+
+  const timer = startRecognitionTimer("manual_explain");
+  timer.setPrefix("status.explainingTimer");
+
+  try {
+    const ok = await ensureLiteRtLm(bridge);
+    if (!ok) return;
+    const promptOverrideRaw = (state.settings.explainPrompt || "").trim();
+    const promptOverride = promptOverrideRaw ? promptOverrideRaw : t("settings.explainPromptDefault");
+    const explained = await bridge.invoke("clean_text_gemma", {
+      rawText: state.rawText,
+      modelPath: state.settings.modelPath || null,
+      promptOverride: promptOverride ? promptOverride : null,
+    });
+    state.rawText = explained || "";
+    setOutputText(state.rawText);
+    setStatus(t("status.ready"));
+  } catch (e) {
+    const msg = String(e?.message || e || "");
+    setStatus(formatNativeError(msg));
+  } finally {
+    timer.stop();
+    setBusy(false);
+    if (ui.btnExplain) ui.btnExplain.disabled = false;
+  }
+}
+
 function wireUi() {
   ui.btnBack.addEventListener("click", goBack);
   ui.btnGoSettings.addEventListener("click", () => showScreen("settings"));
@@ -1267,6 +1338,12 @@ function wireUi() {
       persistSettings();
     });
   }
+  if (ui.inputExplainPrompt) {
+    ui.inputExplainPrompt.addEventListener("change", () => {
+      state.settings.explainPrompt = ui.inputExplainPrompt.value;
+      persistSettings();
+    });
+  }
   ui.inputModelPath.addEventListener("change", () => {
     state.settings.modelPath = ui.inputModelPath.value.trim();
     persistSettings();
@@ -1301,6 +1378,7 @@ function wireUi() {
   ui.btnToggleTextSettings.addEventListener("click", () => {
     ui.textSettings.classList.toggle("settings--hidden");
   });
+  if (ui.btnExplain) ui.btnExplain.addEventListener("click", explainWithGemma);
   ui.btnClean.addEventListener("click", cleanWithGemma);
 
   ui.fontFamily.addEventListener("change", () => {
