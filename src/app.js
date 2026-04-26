@@ -12,6 +12,7 @@ const ui = {
   btnClean: document.getElementById("btnClean"),
   btnExplain: document.getElementById("btnExplain"),
   btnPrint: document.getElementById("btnPrint"),
+  btnSpeak: document.getElementById("btnSpeak"),
   toggleAutoCorrect: document.getElementById("toggleAutoCorrect"),
   toggleAiClean: document.getElementById("toggleAiClean"),
   inputAiPrompt: document.getElementById("inputAiPrompt"),
@@ -87,6 +88,10 @@ const state = {
     background: "#fff7e6",
     textColor: "#1a1a1a",
   },
+  tts: {
+    audio: null,
+    speaking: false,
+  },
 };
 
 const i18n = {
@@ -142,6 +147,7 @@ const i18n = {
     "result.viewSettings": "Налаштування вигляду",
     "result.explain": "Пояснити (Gemma)",
     "result.print": "Друк",
+    "result.speak": "Озвучити",
     "result.clean": "Очистити (Gemma)",
     "result.font": "Шрифт",
     "result.systemFont": "Системний",
@@ -180,6 +186,11 @@ const i18n = {
     "errors.noTextToClean": "Немає тексту для очищення",
     "errors.noTextToExplain": "Немає тексту для пояснення",
     "errors.noTextToPrint": "Немає тексту для друку",
+    "errors.noTextToSpeak": "Немає тексту для озвучення",
+    "status.speaking": "Озвучення…",
+    "status.speakingDone": "Озвучення завершено",
+    "errors.speakNoNetwork": "Немає інтернету для озвучення",
+    "errors.speakFailed": "Не вдалося озвучити текст: {msg}",
     "status.openingCamera": "Відкриваю камеру…",
     "errors.openCameraFailed": "Не вдалося відкрити камеру",
     "status.rotating": "Поворот…",
@@ -251,6 +262,7 @@ const i18n = {
     "result.viewSettings": "Reading settings",
     "result.explain": "Explain (Gemma)",
     "result.print": "Print",
+    "result.speak": "Speak",
     "result.clean": "Clean up (Gemma)",
     "result.font": "Font",
     "result.systemFont": "System",
@@ -289,6 +301,11 @@ const i18n = {
     "errors.noTextToClean": "No text to clean",
     "errors.noTextToExplain": "No text to explain",
     "errors.noTextToPrint": "No text to print",
+    "errors.noTextToSpeak": "No text to speak",
+    "status.speaking": "Speaking…",
+    "status.speakingDone": "Speaking completed",
+    "errors.speakNoNetwork": "No internet connection for speech",
+    "errors.speakFailed": "Failed to speak text: {msg}",
     "status.openingCamera": "Opening camera…",
     "errors.openCameraFailed": "Failed to open camera",
     "status.rotating": "Rotating…",
@@ -1302,6 +1319,43 @@ async function printWithAndroid() {
   }
 }
 
+function getTtsLangCode() {
+  return currentUiLang() === "en" ? "en" : "uk";
+}
+
+async function speakText() {
+  const bridge = getBridge();
+  if (!bridge) {
+    setStatus(t("errors.noBridge"));
+    return;
+  }
+  if (!state.rawText.trim()) {
+    setStatus(t("errors.noTextToSpeak"));
+    return;
+  }
+
+  const lang = getTtsLangCode();
+  if (ui.btnSpeak) ui.btnSpeak.disabled = true;
+  state.tts.speaking = true;
+  setStatus(t("status.speaking"));
+
+  try {
+    await bridge.invoke("speak_text", {
+      rawText: state.rawText,
+      lang,
+    });
+    setStatus(t("status.speakingDone"));
+    setTimeout(() => {
+      if (!state.tts.speaking) setStatus(t("status.ready"));
+    }, 700);
+  } catch (e) {
+    setStatus(formatNativeError(e));
+  } finally {
+    state.tts.speaking = false;
+    if (ui.btnSpeak) ui.btnSpeak.disabled = false;
+  }
+}
+
 function wireUi() {
   ui.btnBack.addEventListener("click", goBack);
   ui.btnGoSettings.addEventListener("click", () => showScreen("settings"));
@@ -1419,6 +1473,7 @@ function wireUi() {
   });
   if (ui.btnExplain) ui.btnExplain.addEventListener("click", explainWithGemma);
   if (ui.btnPrint) ui.btnPrint.addEventListener("click", printWithAndroid);
+  if (ui.btnSpeak) ui.btnSpeak.addEventListener("click", speakText);
   ui.btnClean.addEventListener("click", cleanWithGemma);
 
   ui.fontFamily.addEventListener("change", () => {

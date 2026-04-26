@@ -110,6 +110,13 @@ struct AndroidPrintTextRequest {
 }
 
 #[cfg(target_os = "android")]
+#[derive(Debug, Serialize)]
+struct AndroidSpeakTextRequest {
+    text: String,
+    lang: String,
+}
+
+#[cfg(target_os = "android")]
 #[derive(Debug, Deserialize)]
 struct AndroidTakePhotoResponse {
     #[serde(rename = "imageBase64")]
@@ -1537,6 +1544,40 @@ async fn print_text(
     }
 }
 
+#[tauri::command(rename_all = "camelCase")]
+async fn speak_text(
+    mobile: tauri::State<'_, DezleksMobilePlugin>,
+    raw_text: String,
+    lang: Option<String>,
+) -> Result<String, String> {
+    #[cfg(target_os = "android")]
+    {
+        let text = raw_text.trim().to_string();
+        if text.is_empty() {
+            return Err("Немає тексту для озвучення".to_string());
+        }
+        let lang = lang
+            .unwrap_or_else(|| "uk".to_string())
+            .trim()
+            .to_lowercase();
+        let lang = if lang == "en" { "en" } else { "uk" }.to_string();
+
+        let _ = mobile
+            .0
+            .run_mobile_plugin::<AndroidOkResponse>("speakText", AndroidSpeakTextRequest { text, lang })
+            .map_err(|e| format!("Не вдалося озвучити текст: {e}"))?;
+        return Ok("ok".to_string());
+    }
+
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = mobile;
+        let _ = raw_text;
+        let _ = lang;
+        Err("Озвучення підтримується лише на Android".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -1562,7 +1603,8 @@ pub fn run() {
             ensure_litert_lm,
             ensure_gemma_ocr_runtime,
             download_model,
-            print_text
+            print_text,
+            speak_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

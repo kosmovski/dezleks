@@ -19,6 +19,7 @@ import android.print.PrintManager
 import android.print.PrintDocumentAdapter
 import android.print.PrintDocumentInfo
 import android.print.pdf.PrintedPdfDocument
+import android.speech.tts.TextToSpeech
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -50,12 +51,16 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Collections
 import java.util.Date
+import java.util.Locale
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 @TauriPlugin
 class DezleksNativePlugin(private val activity: Activity) : Plugin(activity) {
   private var engine: Engine? = null
   private var engineModelPath: String? = null
   private var pendingTakePhotoUri: Uri? = null
+  private var tts: TextToSpeech? = null
 
   private fun escapeHtml(s: String): String {
     val out = StringBuilder(s.length + 16)
@@ -216,6 +221,87 @@ class DezleksNativePlugin(private val activity: Activity) : Plugin(activity) {
       } catch (e: Exception) {
         invoke.reject(e.message ?: "printText failed", e, null)
       }
+    }
+  }
+
+  private fun mapTtsLocale(lang: String): Locale {
+    return when (lang.trim().lowercase()) {
+      "uk", "ukr" -> Locale("uk", "UA")
+      "en", "eng" -> Locale.ENGLISH
+      else -> Locale.getDefault()
+    }
+  }
+
+  private fun ensureTts(onReady: (TextToSpeech) -> Unit, onError: (String) -> Unit) {
+    val existing = tts
+    if (existing != null) {
+      onReady(existing)
+      return
+    }
+
+    val settled = AtomicBoolean(false)
+    var created: TextToSpeech? = null
+    created = TextToSpeech(activity) { status ->
+      if (settled.getAndSet(true)) return@TextToSpeech
+      val readyTts = created
+      if (readyTts == null) {
+        onError("tts init failed")
+        return@TextToSpeech
+      }
+      if (status == TextToSpeech.SUCCESS) {
+        tts = readyTts
+        onReady(readyTts)
+      } else {
+        try {
+          readyTts.shutdown()
+        } catch (_: Throwable) {
+        }
+        onError("tts init failed")
+      }
+    }
+  }
+
+  @Command
+  fun speakText(invoke: Invoke) {
+    val args = invoke.getArgs()
+    val text = args.getString("text") ?: ""
+    if (text.isBlank()) {
+      invoke.reject("text is required")
+      return
+    }
+    val langRaw = args.optString("lang", "uk")
+    val locale = mapTtsLocale(langRaw ?: "uk")
+
+    activity.runOnUiThread {
+      ensureTts(onReady = { ttsEngine ->
+        try {
+          val availability = ttsEngine.isLanguageAvailable(locale)
+          if (availability == TextToSpeech.LANG_MISSING_DATA || availability == TextToSpeech.LANG_NOT_SUPPORTED) {
+            invoke.reject("tts language not supported: ${locale.toLanguageTag()}")
+            return@ensureTts
+          }
+
+          val setLangResult = ttsEngine.setLanguage(locale)
+          if (setLangResult == TextToSpeech.LANG_MISSING_DATA || setLangResult == TextToSpeech.LANG_NOT_SUPPORTED) {
+            invoke.reject("tts language set failed: ${locale.toLanguageTag()}")
+            return@ensureTts
+          }
+
+          val utteranceId = "dezleks-${UUID.randomUUID()}"
+          val speakResult = ttsEngine.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+          if (speakResult == TextToSpeech.ERROR) {
+            invoke.reject("tts speak failed")
+            return@ensureTts
+          }
+
+          val out = JSObject().apply { put("ok", true) }
+          invoke.resolve(out)
+        } catch (e: Exception) {
+          invoke.reject(e.message ?: "speakText failed", e, null)
+        }
+      }, onError = { msg ->
+        invoke.reject(msg)
+      })
     }
   }
 

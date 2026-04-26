@@ -185,20 +185,36 @@
             <div class="sectionTitle" data-i18n="result.title">Результат</div>
             <div class="resultHeader__actions">
               <button id="btnToggleTextSettings" class="btn btn--secondary" data-i18n="result.viewSettings">Налаштування вигляду</button>
-              <button id="btnExplain" class="btn btn--secondary" data-i18n="result.explain">Пояснити (Gemma)</button>
-              <button
-                id="btnPrint"
-                class="btn btn--secondary bottomNav__btn"
-                data-i18n-aria-label="result.print"
-                data-i18n-title="result.print"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M6 9V2h12v7" />
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                  <path d="M6 14h12v8H6z" />
-                </svg>
-              </button>
-              <button id="btnClean" class="btn btn--secondary" data-i18n="result.clean">Очистити (Gemma)</button>
+              <div class="resultHeader__iconRow">
+                <button
+                  id="btnPrint"
+                  class="btn btn--secondary resultActionIcon"
+                  data-i18n-aria-label="result.print"
+                  data-i18n-title="result.print"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9V2h12v7" />
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <path d="M6 14h12v8H6z" />
+                  </svg>
+                </button>
+                <button
+                  id="btnSpeak"
+                  class="btn btn--secondary resultActionIcon"
+                  data-i18n-aria-label="result.speak"
+                  data-i18n-title="result.speak"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                    <path d="M18.5 6a8.5 8.5 0 0 1 0 12" />
+                  </svg>
+                </button>
+              </div>
+              <div class="resultHeader__textRow">
+                <button id="btnClean" class="btn btn--secondary" data-i18n="result.clean">Очистити (Gemma)</button>
+                <button id="btnExplain" class="btn btn--secondary" data-i18n="result.explain">Пояснити (Gemma)</button>
+              </div>
             </div>
           </div>
 
