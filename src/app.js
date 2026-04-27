@@ -420,6 +420,15 @@ function applyLanguage() {
     if (!key) return;
     el.setAttribute("aria-label", t(key));
   });
+
+  if (ui.inputAiPrompt) {
+    ui.inputAiPrompt.setAttribute("lang", lang);
+    ui.inputAiPrompt.setAttribute("inputmode", "text");
+  }
+  if (ui.inputExplainPrompt) {
+    ui.inputExplainPrompt.setAttribute("lang", lang);
+    ui.inputExplainPrompt.setAttribute("inputmode", "text");
+  }
 }
 
 function setStatus(text) {
@@ -1136,7 +1145,7 @@ async function recognize() {
   ui.btnRecognize.disabled = true;
   
   const engineToUse = state.settings.engine;
-  const shouldClean = state.settings.aiClean || engineToUse === "gemma";
+  const shouldClean = state.settings.aiClean;
   const timerEngineKey = shouldClean ? `${engineToUse}_clean` : engineToUse;
   const timer = startRecognitionTimer(timerEngineKey);
 
@@ -1157,6 +1166,7 @@ async function recognize() {
       lang: state.settings.lang,
       engine: engineToUse,
       modelPath: modelPath || null,
+      ocrPromptOverride: (state.settings.aiPrompt || "").trim() || null,
     });
     state.rawText = result?.rawText || "";
     if (!state.rawText.trim()) {
@@ -1426,16 +1436,20 @@ function wireUi() {
     persistSettings();
   });
   if (ui.inputAiPrompt) {
-    ui.inputAiPrompt.addEventListener("change", () => {
+    const saveAiPrompt = () => {
       state.settings.aiPrompt = ui.inputAiPrompt.value;
       persistSettings();
-    });
+    };
+    ui.inputAiPrompt.addEventListener("input", saveAiPrompt);
+    ui.inputAiPrompt.addEventListener("change", saveAiPrompt);
   }
   if (ui.inputExplainPrompt) {
-    ui.inputExplainPrompt.addEventListener("change", () => {
+    const saveExplainPrompt = () => {
       state.settings.explainPrompt = ui.inputExplainPrompt.value;
       persistSettings();
-    });
+    };
+    ui.inputExplainPrompt.addEventListener("input", saveExplainPrompt);
+    ui.inputExplainPrompt.addEventListener("change", saveExplainPrompt);
   }
   ui.inputModelPath.addEventListener("change", () => {
     state.settings.modelPath = ui.inputModelPath.value.trim();

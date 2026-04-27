@@ -544,6 +544,7 @@ async fn ocr(
     lang: String,
     engine: String,
     model_path: Option<String>,
+    ocr_prompt_override: Option<String>,
 ) -> Result<OcrResult, String> {
     if engine != "tesseract" && engine != "gemma" && engine != "mlkit" {
         return Err("Невідомий двигун OCR".to_string());
@@ -593,12 +594,19 @@ async fn ocr(
                 })?;
 
             let cropped_png = encode_png_base64(&cropped)?.bytes_base64;
-            let prompt = format!(
+            let base_prompt = format!(
                 "Витягни весь видимий текст з зображення.\n\
 Поверни лише текст, зберігай переноси рядків.\n\
 Без пояснень.\n\
 Підказка щодо мов: {lang}\n"
             );
+            let prompt = ocr_prompt_override
+                .and_then(|s| {
+                    let t = s.trim().to_string();
+                    if t.is_empty() { None } else { Some(t) }
+                })
+                .map(|extra| format!("{base_prompt}\nДодаткові правила очищення:\n{extra}\n"))
+                .unwrap_or(base_prompt);
 
             let text = mobile
                 .0
@@ -619,12 +627,14 @@ async fn ocr(
         {
             let _ = cropped;
             let _ = model_path;
+            let _ = ocr_prompt_override;
             return Err("Gemma OCR зараз реалізовано лише для macOS та Android".to_string());
         }
     }
 
     #[cfg(target_os = "macos")]
     {
+        let _ = ocr_prompt_override;
         if engine == "mlkit" {
             let _ = cropped;
             let _ = lang;
@@ -640,6 +650,7 @@ async fn ocr(
 
     #[cfg(target_os = "android")]
     {
+        let _ = ocr_prompt_override;
         let cropped_png = encode_png_base64(&cropped)?.bytes_base64;
         let text = if engine == "mlkit" {
             mobile

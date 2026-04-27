@@ -420,6 +420,16 @@ body {
   min-height: 42px;
 }
 
+textarea.input {
+  resize: vertical;
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -webkit-user-modify: read-write-plaintext-only;
+  caret-color: var(--text);
+}
+
 .input--color {
   min-height: 44px;
   padding: 4px;
